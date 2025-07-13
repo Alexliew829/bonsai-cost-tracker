@@ -20,21 +20,13 @@
 <body>
   <h2>盆栽成本记录系统</h2>
 
+  <!-- 🌱 盆栽资料 -->
   <div class="section">
-    <h3>🌱 盆栽资料</h3>
+    <h3>🌱 盆栽资料（含内陆发货信息）</h3>
     <div class="grid-2">
-      <div>
-        <label>供应商</label>
-        <input id="supplier" />
-      </div>
-      <div>
-        <label>品种</label>
-        <input id="variety" />
-      </div>
-      <div>
-        <label>单价（原币）</label>
-        <input type="number" id="price" />
-      </div>
+      <div><label>供应商</label><input id="supplier" /></div>
+      <div><label>品种</label><input id="variety" /></div>
+      <div><label>单价（原币）</label><input type="number" id="price" /></div>
       <div>
         <label>币值</label>
         <select id="currency">
@@ -44,98 +36,60 @@
           <option value="IDR">IDR</option>
         </select>
       </div>
-      <div>
-        <label>数量（棵）</label>
-        <input type="number" id="quantity" value="1" />
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <h3>🧾 成本细节</h3>
-    <div class="grid-2">
-      <div>
-        <label>花盆成本 RM</label>
-        <input type="number" id="pot" value="0" />
-      </div>
-      <div>
-        <label>苔藓成本 RM</label>
-        <input type="number" id="moss" value="0" />
-      </div>
-      <div>
-        <label>本地运输 RM</label>
-        <input type="number" id="local" value="0" />
-      </div>
-      <div>
-        <label>图片网址（URL）</label>
-        <input id="image_url" />
-      </div>
+      <div><label>数量（棵）</label><input type="number" id="quantity" value="1" /></div>
+      <div><label>图片网址（URL）</label><input id="image_url" /></div>
+      <div><label>发货单号</label><input id="shipment_id" /></div>
+      <div><label>这次发货总数（棵）</label><input type="number" id="total_plants" /></div>
+      <div><label>这次发货总金额（RM）</label><input type="number" id="total_amount" /></div>
+      <div><label>包装明细</label><input id="packing" /></div>
+      <div><label>抵达仓库日期</label><input type="date" id="warehouse_date" /></div>
     </div>
     <img id="preview" class="img-preview" style="display:none" />
-    <button onclick="calculate()">计算成本与售价</button>
   </div>
 
+  <!-- 📦 发货资料 -->
   <div class="section">
-    <h3>📦 发货资料</h3>
-    <label>发货单号</label>
-    <input id="shipment_id" />
-    <label>总盆栽棵数</label>
-    <input type="number" id="total_plants" />
-    <label>包装明细</label>
-    <input id="packing" />
-    <label>抵达仓库日期</label>
-    <input type="date" id="warehouse_date" />
-    <label>装柜日期</label>
-    <input type="date" id="container_date" />
-    <label>海运单号</label>
-    <input id="shipping_no" />
-    <label>到马运费（RM）</label>
-    <input type="number" id="freight_fee" />
-    <label>抵达大马日期</label>
-    <input type="date" id="arrival_date" />
-    <button onclick="saveShipmentInfo()">保存发货资料</button>
+    <h3>📦 海外发货资料</h3>
+    <label>装柜日期</label><input type="date" id="container_date" />
+    <label>海运单号</label><input id="shipping_no" />
+    <label>到大马运费（RM）</label><input type="number" id="freight_fee" />
+    <label>抵达大马日期</label><input type="date" id="arrival_date" />
+  </div>
+
+  <!-- 🧾 成本与售价 -->
+  <div class="section">
+    <h3>🧾 成本与售价</h3>
+    <div class="grid-2">
+      <div><label>花盆成本 RM</label><input type="number" id="pot" value="0" /></div>
+      <div><label>苔藓成本 RM</label><input type="number" id="moss" value="0" /></div>
+      <div><label>本地运输 RM</label><input type="number" id="local" value="0" /></div>
+    </div>
+    <button onclick="calculate()">计算成本与售价</button>
   </div>
 
   <div class="section result" id="result" style="display:none"></div>
 
+  <!-- 💾 手动储存 -->
+  <div style="text-align: center; margin: 10px;">
+    <button onclick="saveToStorage()">💾 手动储存全部资料</button>
+  </div>
+
   <script>
     const rates = { CNY: 1.5, VND: 5555, NTD: 6.8, IDR: 3800 };
-    let shipmentInfo = {};
-
-    function saveShipmentInfo() {
-      shipmentInfo = {
-        id: document.getElementById('shipment_id').value,
-        total_plants: parseFloat(document.getElementById('total_plants').value) || 0,
-        packing: document.getElementById('packing').value,
-        warehouse_date: document.getElementById('warehouse_date').value,
-        container_date: document.getElementById('container_date').value,
-        shipping_no: document.getElementById('shipping_no').value,
-        freight_fee: parseFloat(document.getElementById('freight_fee').value) || 0,
-        arrival_date: document.getElementById('arrival_date').value
-      };
-      alert('发货资料已保存');
-    }
-
     function calculate() {
-      const currency = document.getElementById('currency').value;
-      const rate = rates[currency];
+      const rate = rates[document.getElementById('currency').value];
       const price = parseFloat(document.getElementById('price').value) || 0;
       const quantity = parseFloat(document.getElementById('quantity').value) || 1;
+      const totalAmount = parseFloat(document.getElementById('total_amount').value) || 0;
+      const totalPlants = parseFloat(document.getElementById('total_plants').value) || 1;
+      const freight_fee = parseFloat(document.getElementById('freight_fee').value) || 0;
+
       const pot = parseFloat(document.getElementById('pot').value) || 0;
       const moss = parseFloat(document.getElementById('moss').value) || 0;
       const local = parseFloat(document.getElementById('local').value) || 0;
 
-      const imageUrl = document.getElementById('image_url').value;
-      document.getElementById('preview').src = imageUrl;
-      document.getElementById('preview').style.display = imageUrl ? 'block' : 'none';
-
       const baseCost = price / rate;
-
-      let freightRatio = 0;
-      if (shipmentInfo.freight_fee > 0 && shipmentInfo.total_plants > 0) {
-        freightRatio = shipmentInfo.freight_fee / shipmentInfo.total_plants;
-      }
-
+      const freightRatio = freight_fee / (totalAmount / rate || 1);
       const originCost = baseCost + freightRatio;
       const totalCost = originCost + pot + moss + local;
 
@@ -150,13 +104,17 @@
       const profit = prices['50%'] - totalCost;
       const profitRate = (profit / prices['50%']) * 100;
 
-      const shipDays = shipmentInfo.container_date && shipmentInfo.arrival_date
-        ? Math.floor((new Date(shipmentInfo.arrival_date) - new Date(shipmentInfo.container_date)) / (1000 * 60 * 60 * 24))
-        : '-';
+      const cDate = new Date(document.getElementById('container_date').value);
+      const aDate = new Date(document.getElementById('arrival_date').value);
+      const shipDays = (!isNaN(cDate) && !isNaN(aDate)) ? Math.floor((aDate - cDate) / (1000 * 60 * 60 * 24)) : '-';
+
+      document.getElementById('preview').src = document.getElementById('image_url').value;
+      document.getElementById('preview').style.display = document.getElementById('image_url').value ? 'block' : 'none';
 
       document.getElementById('result').style.display = 'block';
       document.getElementById('result').innerHTML = `
         <div><strong>运输天数：</strong>${shipDays} 天</div>
+        <div><strong>运费比例：</strong>${freightRatio.toFixed(4)}</div>
         <div><strong>原成本：</strong>RM ${originCost.toFixed(2)}</div>
         <div><strong>总成本：</strong>RM ${totalCost.toFixed(2)}</div>
         <div><strong>20% 售价：</strong>RM ${prices['20%'].toFixed(2)}</div>
@@ -168,6 +126,25 @@
         <div><strong>利润率：</strong>${profitRate.toFixed(1)}%</div>
       `;
     }
+
+    function saveToStorage() {
+      const ids = ['supplier','variety','price','currency','quantity','image_url','shipment_id','total_plants','total_amount','packing','warehouse_date','container_date','shipping_no','freight_fee','arrival_date','pot','moss','local'];
+      const data = {};
+      ids.forEach(id => data[id] = document.getElementById(id).value);
+      localStorage.setItem('bonsai_data', JSON.stringify(data));
+      alert('✅ 已手动储存全部资料');
+    }
+
+    function loadFromStorage() {
+      const data = JSON.parse(localStorage.getItem('bonsai_data') || '{}');
+      for (const key in data) {
+        const el = document.getElementById(key);
+        if (el) el.value = data[key];
+      }
+    }
+
+    setInterval(saveToStorage, 120000); // 自动储存
+    window.onload = loadFromStorage;
   </script>
 </body>
 </html>
