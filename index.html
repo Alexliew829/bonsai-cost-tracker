@@ -21,27 +21,6 @@
   <h2>盆栽成本记录系统</h2>
 
   <div class="section">
-    <h3>📦 发货资料</h3>
-    <label>发货单号</label>
-    <input id="shipment_id" />
-    <label>总盆栽棵数</label>
-    <input type="number" id="total_plants" />
-    <label>包装明细</label>
-    <input id="packing" />
-    <label>抵达仓库日期</label>
-    <input type="date" id="warehouse_date" />
-    <label>装柜日期</label>
-    <input type="date" id="container_date" />
-    <label>海运单号</label>
-    <input id="shipping_no" />
-    <label>到马运费（RM）</label>
-    <input type="number" id="freight_fee" />
-    <label>抵达大马日期</label>
-    <input type="date" id="arrival_date" />
-    <button onclick="saveShipmentInfo()">保存发货资料</button>
-  </div>
-
-  <div class="section">
     <h3>🌱 盆栽资料</h3>
     <div class="grid-2">
       <div>
@@ -53,6 +32,10 @@
         <input id="variety" />
       </div>
       <div>
+        <label>单价（原币）</label>
+        <input type="number" id="price" />
+      </div>
+      <div>
         <label>币值</label>
         <select id="currency">
           <option value="CNY">CNY</option>
@@ -62,13 +45,15 @@
         </select>
       </div>
       <div>
-        <label>单价（原币）</label>
-        <input type="number" id="price" />
-      </div>
-      <div>
         <label>数量（棵）</label>
         <input type="number" id="quantity" value="1" />
       </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>🧾 成本细节</h3>
+    <div class="grid-2">
       <div>
         <label>花盆成本 RM</label>
         <input type="number" id="pot" value="0" />
@@ -88,6 +73,27 @@
     </div>
     <img id="preview" class="img-preview" style="display:none" />
     <button onclick="calculate()">计算成本与售价</button>
+  </div>
+
+  <div class="section">
+    <h3>📦 发货资料</h3>
+    <label>发货单号</label>
+    <input id="shipment_id" />
+    <label>总盆栽棵数</label>
+    <input type="number" id="total_plants" />
+    <label>包装明细</label>
+    <input id="packing" />
+    <label>抵达仓库日期</label>
+    <input type="date" id="warehouse_date" />
+    <label>装柜日期</label>
+    <input type="date" id="container_date" />
+    <label>海运单号</label>
+    <input id="shipping_no" />
+    <label>到马运费（RM）</label>
+    <input type="number" id="freight_fee" />
+    <label>抵达大马日期</label>
+    <input type="date" id="arrival_date" />
+    <button onclick="saveShipmentInfo()">保存发货资料</button>
   </div>
 
   <div class="section result" id="result" style="display:none"></div>
@@ -123,12 +129,11 @@
       document.getElementById('preview').src = imageUrl;
       document.getElementById('preview').style.display = imageUrl ? 'block' : 'none';
 
-      const totalAmount = price * quantity;
       const baseCost = price / rate;
 
       let freightRatio = 0;
       if (shipmentInfo.freight_fee > 0 && shipmentInfo.total_plants > 0) {
-        freightRatio = shipmentInfo.freight_fee / (shipmentInfo.total_plants);
+        freightRatio = shipmentInfo.freight_fee / shipmentInfo.total_plants;
       }
 
       const originCost = baseCost + freightRatio;
