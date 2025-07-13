@@ -6,55 +6,87 @@
   <title>盆栽成本记录系统</title>
   <style>
     body { font-family: sans-serif; padding: 15px; background-color: #f9f9f9; }
-    h2 { text-align: center; }
-    input, select, textarea { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; font-size: 16px; }
-    label { font-weight: bold; margin-top: 10px; display: block; }
+    h2, h3 { text-align: center; }
+    input, select, textarea { width: 100%; padding: 6px; margin: 4px 0; box-sizing: border-box; font-size: 15px; }
+    label { font-weight: bold; margin-top: 8px; display: block; font-size: 14px; }
     .section { background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 0 5px #ccc; }
     .highlight { color: red; font-weight: bold; }
     .result { background: #eef; padding: 10px; margin-top: 10px; border-radius: 6px; }
     .img-preview { width: 100%; max-width: 300px; display: block; margin-top: 10px; }
     button { padding: 10px 20px; font-size: 16px; margin-top: 10px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   </style>
 </head>
 <body>
   <h2>盆栽成本记录系统</h2>
+
   <div class="section">
-    <label>供应商</label>
-    <input id="supplier" />
-
-    <label>品种</label>
-    <input id="variety" />
-
-    <label>币值</label>
-    <select id="currency">
-      <option value="CNY">CNY</option>
-      <option value="VND">VND</option>
-      <option value="NTD">NTD</option>
-      <option value="IDR">IDR</option>
-    </select>
-
-    <label>单价（原币）</label>
-    <input type="number" id="price" />
-
-    <label>数量（棵）</label>
-    <input type="number" id="quantity" value="1" />
-
+    <h3>📦 发货资料</h3>
     <label>发货单号</label>
     <input id="shipment_id" />
+    <label>总盆栽棵数</label>
+    <input type="number" id="total_plants" />
+    <label>包装明细</label>
+    <input id="packing" />
+    <label>抵达仓库日期</label>
+    <input type="date" id="warehouse_date" />
+    <label>装柜日期</label>
+    <input type="date" id="container_date" />
+    <label>海运单号</label>
+    <input id="shipping_no" />
+    <label>到马运费（RM）</label>
+    <input type="number" id="freight_fee" />
+    <label>抵达大马日期</label>
+    <input type="date" id="arrival_date" />
+    <button onclick="saveShipmentInfo()">保存发货资料</button>
+  </div>
 
-    <label>花盆成本 RM</label>
-    <input type="number" id="pot" value="0" />
-
-    <label>苔藓成本 RM</label>
-    <input type="number" id="moss" value="0" />
-
-    <label>本地运输 RM</label>
-    <input type="number" id="local" value="0" />
-
-    <label>图片网址（URL）</label>
-    <input id="image_url" />
+  <div class="section">
+    <h3>🌱 盆栽资料</h3>
+    <div class="grid-2">
+      <div>
+        <label>供应商</label>
+        <input id="supplier" />
+      </div>
+      <div>
+        <label>品种</label>
+        <input id="variety" />
+      </div>
+      <div>
+        <label>币值</label>
+        <select id="currency">
+          <option value="CNY">CNY</option>
+          <option value="VND">VND</option>
+          <option value="NTD">NTD</option>
+          <option value="IDR">IDR</option>
+        </select>
+      </div>
+      <div>
+        <label>单价（原币）</label>
+        <input type="number" id="price" />
+      </div>
+      <div>
+        <label>数量（棵）</label>
+        <input type="number" id="quantity" value="1" />
+      </div>
+      <div>
+        <label>花盆成本 RM</label>
+        <input type="number" id="pot" value="0" />
+      </div>
+      <div>
+        <label>苔藓成本 RM</label>
+        <input type="number" id="moss" value="0" />
+      </div>
+      <div>
+        <label>本地运输 RM</label>
+        <input type="number" id="local" value="0" />
+      </div>
+      <div>
+        <label>图片网址（URL）</label>
+        <input id="image_url" />
+      </div>
+    </div>
     <img id="preview" class="img-preview" style="display:none" />
-
     <button onclick="calculate()">计算成本与售价</button>
   </div>
 
@@ -62,14 +94,27 @@
 
   <script>
     const rates = { CNY: 1.5, VND: 5555, NTD: 6.8, IDR: 3800 };
+    let shipmentInfo = {};
+
+    function saveShipmentInfo() {
+      shipmentInfo = {
+        id: document.getElementById('shipment_id').value,
+        total_plants: parseFloat(document.getElementById('total_plants').value) || 0,
+        packing: document.getElementById('packing').value,
+        warehouse_date: document.getElementById('warehouse_date').value,
+        container_date: document.getElementById('container_date').value,
+        shipping_no: document.getElementById('shipping_no').value,
+        freight_fee: parseFloat(document.getElementById('freight_fee').value) || 0,
+        arrival_date: document.getElementById('arrival_date').value
+      };
+      alert('发货资料已保存');
+    }
 
     function calculate() {
       const currency = document.getElementById('currency').value;
       const rate = rates[currency];
       const price = parseFloat(document.getElementById('price').value) || 0;
       const quantity = parseFloat(document.getElementById('quantity').value) || 1;
-      const shipment_id = document.getElementById('shipment_id').value;
-
       const pot = parseFloat(document.getElementById('pot').value) || 0;
       const moss = parseFloat(document.getElementById('moss').value) || 0;
       const local = parseFloat(document.getElementById('local').value) || 0;
@@ -81,8 +126,12 @@
       const totalAmount = price * quantity;
       const baseCost = price / rate;
 
-      const freightRatio = 0.12; // 假设初期固定值，后续按发货编号分担
-      const originCost = baseCost + baseCost * freightRatio;
+      let freightRatio = 0;
+      if (shipmentInfo.freight_fee > 0 && shipmentInfo.total_plants > 0) {
+        freightRatio = shipmentInfo.freight_fee / (shipmentInfo.total_plants);
+      }
+
+      const originCost = baseCost + freightRatio;
       const totalCost = originCost + pot + moss + local;
 
       const prices = {
@@ -96,8 +145,13 @@
       const profit = prices['50%'] - totalCost;
       const profitRate = (profit / prices['50%']) * 100;
 
+      const shipDays = shipmentInfo.container_date && shipmentInfo.arrival_date
+        ? Math.floor((new Date(shipmentInfo.arrival_date) - new Date(shipmentInfo.container_date)) / (1000 * 60 * 60 * 24))
+        : '-';
+
       document.getElementById('result').style.display = 'block';
       document.getElementById('result').innerHTML = `
+        <div><strong>运输天数：</strong>${shipDays} 天</div>
         <div><strong>原成本：</strong>RM ${originCost.toFixed(2)}</div>
         <div><strong>总成本：</strong>RM ${totalCost.toFixed(2)}</div>
         <div><strong>20% 售价：</strong>RM ${prices['20%'].toFixed(2)}</div>
