@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>盆栽成本记录系统</title>
+  <style>
+    body { font-family: sans-serif; padding: 15px; background-color: #f9f9f9; }
+    h2 { text-align: center; }
+    input, select, textarea { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; font-size: 16px; }
+    label { font-weight: bold; margin-top: 10px; display: block; }
+    .section { background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 0 5px #ccc; }
+    .highlight { color: red; font-weight: bold; }
+    .result { background: #eef; padding: 10px; margin-top: 10px; border-radius: 6px; }
+    .img-preview { width: 100%; max-width: 300px; display: block; margin-top: 10px; }
+    button { padding: 10px 20px; font-size: 16px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>盆栽成本记录系统</h2>
+  <div class="section">
+    <label>供应商</label>
+    <input id="supplier" />
+
+    <label>品种</label>
+    <input id="variety" />
+
+    <label>币值</label>
+    <select id="currency">
+      <option value="CNY">CNY</option>
+      <option value="VND">VND</option>
+      <option value="NTD">NTD</option>
+      <option value="IDR">IDR</option>
+    </select>
+
+    <label>单价（原币）</label>
+    <input type="number" id="price" />
+
+    <label>数量（棵）</label>
+    <input type="number" id="quantity" value="1" />
+
+    <label>发货单号</label>
+    <input id="shipment_id" />
+
+    <label>花盆成本 RM</label>
+    <input type="number" id="pot" value="0" />
+
+    <label>苔藓成本 RM</label>
+    <input type="number" id="moss" value="0" />
+
+    <label>本地运输 RM</label>
+    <input type="number" id="local" value="0" />
+
+    <label>图片网址（URL）</label>
+    <input id="image_url" />
+    <img id="preview" class="img-preview" style="display:none" />
+
+    <button onclick="calculate()">计算成本与售价</button>
+  </div>
+
+  <div class="section result" id="result" style="display:none"></div>
+
+  <script>
+    const rates = { CNY: 1.5, VND: 5555, NTD: 6.8, IDR: 3800 };
+
+    function calculate() {
+      const currency = document.getElementById('currency').value;
+      const rate = rates[currency];
+      const price = parseFloat(document.getElementById('price').value) || 0;
+      const quantity = parseFloat(document.getElementById('quantity').value) || 1;
+      const shipment_id = document.getElementById('shipment_id').value;
+
+      const pot = parseFloat(document.getElementById('pot').value) || 0;
+      const moss = parseFloat(document.getElementById('moss').value) || 0;
+      const local = parseFloat(document.getElementById('local').value) || 0;
+
+      const imageUrl = document.getElementById('image_url').value;
+      document.getElementById('preview').src = imageUrl;
+      document.getElementById('preview').style.display = imageUrl ? 'block' : 'none';
+
+      const totalAmount = price * quantity;
+      const baseCost = price / rate;
+
+      const freightRatio = 0.12; // 假设初期固定值，后续按发货编号分担
+      const originCost = baseCost + baseCost * freightRatio;
+      const totalCost = originCost + pot + moss + local;
+
+      const prices = {
+        '20%': totalCost * 1.26 * 1.12,
+        '30%': totalCost * 1.43 * 1.12,
+        '40%': totalCost * 1.67 * 1.12,
+        '50%': totalCost * 2.00 * 1.12,
+        '55%': totalCost * 2.23 * 1.12
+      };
+
+      const profit = prices['50%'] - totalCost;
+      const profitRate = (profit / prices['50%']) * 100;
+
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('result').innerHTML = `
+        <div><strong>原成本：</strong>RM ${originCost.toFixed(2)}</div>
+        <div><strong>总成本：</strong>RM ${totalCost.toFixed(2)}</div>
+        <div><strong>20% 售价：</strong>RM ${prices['20%'].toFixed(2)}</div>
+        <div><strong>30% 售价：</strong>RM ${prices['30%'].toFixed(2)}</div>
+        <div><strong>40% 售价：</strong>RM ${prices['40%'].toFixed(2)}</div>
+        <div class="highlight"><strong>50% 售价：</strong>RM ${prices['50%'].toFixed(2)}</div>
+        <div><strong>55% 售价：</strong>RM ${prices['55%'].toFixed(2)}</div>
+        <div><strong>利润（50%）：</strong>RM ${profit.toFixed(2)}</div>
+        <div><strong>利润率：</strong>${profitRate.toFixed(1)}%</div>
+      `;
+    }
+  </script>
+</body>
+</html>
