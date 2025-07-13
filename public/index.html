@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>盆栽成本记录系统 Lover Legend gardening</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 26px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-top: 30px;
+      text-align: center;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 1000px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 20px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+    }
+    .full {
+      grid-column: 1 / -1;
+    }
+    .center-btn {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .highlight {
+      color: red;
+      font-weight: bold;
+    }
+    .logo {
+      display: block;
+      margin: 0 auto 10px;
+      max-height: 50px;
+    }
+  </style>
+</head>
+<body>
+  <img src="logo.png" class="logo" alt="logo" />
+  <h1>盆栽成本记录系统 Lover Legend gardening</h1>
+
+  <h2>🌱 盆栽资料（含内陆发货信息）</h2>
+  <form id="bonsaiForm">
+    <label>供应商</label><input id="supplier" />
+    <label>品种</label><input id="variety" />
+
+    <label>单价（原币）</label><input id="price" />
+    <label>币值</label>
+    <select id="currency">
+      <option value="CNY">CNY</option>
+      <option value="VND">VND</option>
+      <option value="NTD">NTD</option>
+      <option value="IDR">IDR</option>
+    </select>
+
+    <label>数量（棵）</label><input id="quantity" />
+    <label>图片网址（URL）</label><input id="image_url" />
+
+    <label>发货单号</label><input id="shipment_id" />
+    <label>这次发货总数（棵）</label><input id="total_plants" />
+
+    <label>这次发货总金额（RM）</label><input id="total_amount" />
+    <label>包装明细</label><input id="packing" />
+
+    <label class="full">抵达仓库日期</label><input id="warehouse_date" type="date" class="full" />
+
+    <h2 class="full">📦 发货资料</h2>
+    <label>装柜日期</label><input id="container_date" type="date" />
+    <label>海运单号</label><input id="shipping_no" />
+
+    <label>到大马运费（RM）</label><input id="freight_fee" />
+    <label>抵达大马日期</label><input id="arrival_date" type="date" />
+
+    <label class="full">运输天数（自动）</label><input id="days" disabled class="full" />
+    <label class="full">运费比例（自动）</label><input id="freight_ratio" disabled class="full" />
+
+    <h2 class="full">🧾 成本与销售细节</h2>
+    <label>苔藓成本 RM</label><input id="moss" />
+    <label>花盆成本 RM</label><input id="pot" />
+
+    <label>本地运输 RM</label><input id="local" />
+    <label>原成本（自动）</label><input id="base_cost" disabled />
+
+    <label>总成本（自动）</label><input id="total_cost" disabled />
+    <label>销售价 20%</label><input id="price_20" disabled />
+
+    <label>销售价 30%</label><input id="price_30" disabled />
+    <label>销售价 40%</label><input id="price_40" disabled />
+
+    <label class="highlight">销售价 50%</label><input id="price_50" disabled />
+    <label>销售价 55%</label><input id="price_55" disabled />
+  </form>
+
+  <div class="center-btn">
+    <button onclick="saveToStorage()">💾 手动储存全部资料</button>
+  </div>
+
+  <script>
+    const rates = { CNY: 1.5, VND: 5555, NTD: 6.8, IDR: 3800 };
+
+    function calcAll() {
+      const price = parseFloat(document.getElementById('price').value || 0);
+      const quantity = parseFloat(document.getElementById('quantity').value || 0);
+      const currency = document.getElementById('currency').value;
+      const moss = parseFloat(document.getElementById('moss').value || 0);
+      const pot = parseFloat(document.getElementById('pot').value || 0);
+      const local = parseFloat(document.getElementById('local').value || 0);
+      const totalAmount = parseFloat(document.getElementById('total_amount').value || 1);
+      const freight = parseFloat(document.getElementById('freight_fee').value || 0);
+      const totalPlants = parseFloat(document.getElementById('total_plants').value || 1);
+
+      const rawCost = price / rates[currency];
+      const freightRatio = freight / (totalAmount / rates[currency]);
+      const baseCost = rawCost + freightRatio;
+      const totalCost = baseCost + pot + moss + local;
+
+      document.getElementById('base_cost').value = baseCost.toFixed(2);
+      document.getElementById('freight_ratio').value = (freightRatio * 100).toFixed(2) + '%';
+      document.getElementById('total_cost').value = totalCost.toFixed(2);
+      document.getElementById('price_20').value = (totalCost * 1.26 * 1.12).toFixed(2);
+      document.getElementById('price_30').value = (totalCost * 1.43 * 1.12).toFixed(2);
+      document.getElementById('price_40').value = (totalCost * 1.67 * 1.12).toFixed(2);
+      document.getElementById('price_50').value = (totalCost * 2.0 * 1.12).toFixed(2);
+      document.getElementById('price_55').value = (totalCost * 2.23 * 1.12).toFixed(2);
+
+      const cDate = new Date(document.getElementById('container_date').value);
+      const aDate = new Date(document.getElementById('arrival_date').value);
+      if (!isNaN(cDate) && !isNaN(aDate)) {
+        const days = Math.round((aDate - cDate) / (1000 * 60 * 60 * 24));
+        document.getElementById('days').value = days + ' 天';
+      }
+    }
+
+    document.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('input', calcAll);
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const form = el.form;
+          const index = Array.from(form.elements).indexOf(el);
+          if (index > -1 && index + 1 < form.elements.length) {
+            form.elements[index + 1].focus();
+          }
+        }
+      });
+    });
+
+    function saveToStorage() {
+      const data = {};
+      document.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.id) data[el.id] = el.value;
+      });
+      localStorage.setItem('bonsai_data', JSON.stringify(data));
+      alert('✅ 已手动储存全部资料');
+    }
+
+    function loadFromStorage() {
+      const saved = localStorage.getItem('bonsai_data');
+      if (!saved) return;
+      const data = JSON.parse(saved);
+      for (const key in data) {
+        const el = document.getElementById(key);
+        if (el) el.value = data[key];
+      }
+      calcAll();
+    }
+
+    function autoSave() {
+      saveToStorage();
+      console.log('⏱️ 自动储存成功');
+    }
+
+    setInterval(autoSave, 120000);
+    window.onload = loadFromStorage;
+  </script>
+</body>
+</html>
