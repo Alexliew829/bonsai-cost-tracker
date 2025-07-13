@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>盆栽成本记录系统</title>
+  <title>盆栽成本记录系统 Lover Legend gardening</title>
   <style>
     body { font-family: sans-serif; padding: 15px; background-color: #f9f9f9; }
     h2, h3 { text-align: center; }
@@ -15,10 +15,15 @@
     .img-preview { width: 100%; max-width: 300px; display: block; margin-top: 10px; }
     button { padding: 10px 20px; font-size: 16px; margin-top: 10px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .logo-title { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 15px; }
+    .logo-title img { height: 48px; }
   </style>
 </head>
 <body>
-  <h2>盆栽成本记录系统</h2>
+  <div class="logo-title">
+    <img src="Logo2.jpg" alt="logo" />
+    <h2>盆栽成本记录系统 Lover Legend gardening</h2>
+  </div>
 
   <!-- 🌱 盆栽资料 -->
   <div class="section">
@@ -26,7 +31,7 @@
     <div class="grid-2">
       <div><label>供应商</label><input id="supplier" /></div>
       <div><label>品种</label><input id="variety" /></div>
-      <div><label>单价（原币）</label><input type="number" id="price" /></div>
+      <div><label>单价（原币）</label><input type="text" id="price" onblur="formatPrice(this)" /></div>
       <div>
         <label>币值</label>
         <select id="currency">
@@ -76,9 +81,17 @@
 
   <script>
     const rates = { CNY: 1.5, VND: 5555, NTD: 6.8, IDR: 3800 };
+
+    function formatPrice(input) {
+      const val = parseFloat(input.value.replace(/,/g, ''));
+      if (!isNaN(val)) {
+        input.value = val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    }
+
     function calculate() {
       const rate = rates[document.getElementById('currency').value];
-      const price = parseFloat(document.getElementById('price').value) || 0;
+      const price = parseFloat(document.getElementById('price').value.replace(/,/g, '')) || 0;
       const quantity = parseFloat(document.getElementById('quantity').value) || 1;
       const totalAmount = parseFloat(document.getElementById('total_amount').value) || 0;
       const totalPlants = parseFloat(document.getElementById('total_plants').value) || 1;
@@ -143,7 +156,7 @@
       }
     }
 
-    setInterval(saveToStorage, 120000); // 自动储存
+    setInterval(saveToStorage, 300000); // 每5分钟自动储存
     window.onload = loadFromStorage;
   </script>
 </body>
