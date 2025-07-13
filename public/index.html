@@ -11,8 +11,19 @@
       margin: 0;
       padding: 20px;
     }
-    h1 {
+    .header {
       text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .header img {
+      height: 50px;
+    }
+    .header h1 {
+      margin: 0;
       font-size: 26px;
     }
     h2 {
@@ -49,23 +60,21 @@
       color: red;
       font-weight: bold;
     }
-    .logo {
-      display: block;
-      margin: 0 auto 10px;
-      max-height: 50px;
-    }
   </style>
 </head>
 <body>
-  <img src="logo.png" class="logo" alt="logo" />
-  <h1>盆栽成本记录系统 Lover Legend gardening</h1>
+
+  <div class="header">
+    <img src="logo.png" alt="logo" />
+    <h1>盆栽成本记录系统 Lover Legend gardening</h1>
+  </div>
 
   <h2>🌱 盆栽资料（含内陆发货信息）</h2>
   <form id="bonsaiForm">
     <label>供应商</label><input id="supplier" />
     <label>品种</label><input id="variety" />
 
-    <label>单价（原币）</label><input id="price" />
+    <label>单价（原币）</label><input id="price" inputmode="decimal" />
     <label>币值</label>
     <select id="currency">
       <option value="CNY">CNY</option>
@@ -74,13 +83,13 @@
       <option value="IDR">IDR</option>
     </select>
 
-    <label>数量（棵）</label><input id="quantity" />
+    <label>数量（棵）</label><input id="quantity" inputmode="numeric" />
     <label>图片网址（URL）</label><input id="image_url" />
 
     <label>发货单号</label><input id="shipment_id" />
-    <label>这次发货总数（棵）</label><input id="total_plants" />
+    <label>这次发货总数（棵）</label><input id="total_plants" inputmode="numeric" />
 
-    <label>这次发货总金额（RM）</label><input id="total_amount" />
+    <label>这次发货总金额（RM）</label><input id="total_amount" inputmode="decimal" />
     <label>包装明细</label><input id="packing" />
 
     <label class="full">抵达仓库日期</label><input id="warehouse_date" type="date" class="full" />
@@ -89,17 +98,17 @@
     <label>装柜日期</label><input id="container_date" type="date" />
     <label>海运单号</label><input id="shipping_no" />
 
-    <label>到大马运费（RM）</label><input id="freight_fee" />
+    <label>到大马运费（RM）</label><input id="freight_fee" inputmode="decimal" />
     <label>抵达大马日期</label><input id="arrival_date" type="date" />
 
     <label class="full">运输天数（自动）</label><input id="days" disabled class="full" />
     <label class="full">运费比例（自动）</label><input id="freight_ratio" disabled class="full" />
 
     <h2 class="full">🧾 成本与销售细节</h2>
-    <label>苔藓成本 RM</label><input id="moss" />
-    <label>花盆成本 RM</label><input id="pot" />
+    <label>苔藓成本 RM</label><input id="moss" inputmode="decimal" />
+    <label>花盆成本 RM</label><input id="pot" inputmode="decimal" />
 
-    <label>本地运输 RM</label><input id="local" />
+    <label>本地运输 RM</label><input id="local" inputmode="decimal" />
     <label>原成本（自动）</label><input id="base_cost" disabled />
 
     <label>总成本（自动）</label><input id="total_cost" disabled />
@@ -153,7 +162,18 @@
     }
 
     document.querySelectorAll('input, select').forEach(el => {
-      el.addEventListener('input', calcAll);
+      el.addEventListener('input', () => {
+        if (el.inputMode === 'decimal' || el.inputMode === 'numeric') {
+          const valid = /^\d*\.?\d*$/.test(el.value);
+          if (!valid) {
+            el.setCustomValidity('只能输入数字');
+            el.reportValidity();
+          } else {
+            el.setCustomValidity('');
+          }
+        }
+        calcAll();
+      });
       el.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           e.preventDefault();
