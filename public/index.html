@@ -63,8 +63,10 @@
       border: 2px solid red;
       background-color: #ffe6e6;
     }
-    input[type="url"] {
+    .url-link {
+      color: blue;
       text-decoration: underline;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -85,19 +87,21 @@
       <option value="NTD">NTD</option>
       <option value="IDR">IDR</option>
     </select>
-    <label>数量（棵）</label><input id="quantity" type="number" required />
-    <label>图片网址（URL）</label><input id="image_url" type="url" required />
+    <label>数量（棵）</label><input id="quantity" type="number" step="1" required />
+    <label>图片网址（URL）</label>
+    <input id="image_url" type="url" />
+    <span id="image_link" class="url-link full" style="display:none;"></span>
     <label>发货单号</label><input id="shipment_id" />
-    <label>这次发货总数（棵）</label><input id="total_plants" type="number" required />
+    <label>这次发货总数（棵）</label><input id="total_plants" type="number" step="1" required />
     <label>这次发货总金额（RM）</label><input id="total_amount" type="text" required />
     <label>包装明细</label><input id="packing" />
     <label class="full">抵达仓库日期</label><input id="warehouse_date" type="text" placeholder="dd/mm/yyyy" class="full" maxlength="10" required />
 
     <h2 class="full">📦 发货资料</h2>
-    <label>装柜日期</label><input id="container_date" type="text" placeholder="dd/mm/yyyy" maxlength="10" />
+    <label>装柜日期</label><input id="container_date" type="text" placeholder="dd/mm/yyyy" />
     <label>海运单号</label><input id="shipping_no" />
     <label>到大马运费（RM）</label><input id="freight_fee" type="text" />
-    <label>抵达大马日期</label><input id="arrival_date" type="text" placeholder="dd/mm/yyyy" maxlength="10" />
+    <label>抵达大马日期</label><input id="arrival_date" type="text" placeholder="dd/mm/yyyy" />
     <label class="full">运输天数（自动）</label><input id="days" disabled class="full" />
     <label class="full">运费比例（自动）</label><input id="freight_ratio" disabled class="full" />
 
@@ -125,7 +129,7 @@ function formatCurrency(value) {
 
 function validateNumberField(el) {
   const value = el.value.replace(/,/g, '');
-  if (!/^-?\d+(\.\d{1,2})?$/.test(value)) {
+  if (!/^\d+(\.\d{1,2})?$/.test(value)) {
     el.classList.add('error');
     return false;
   } else {
@@ -135,33 +139,56 @@ function validateNumberField(el) {
   }
 }
 
-function padDateInput(value) {
-  const cleaned = value.replace(/[^0-9]/g, "");
-  if (cleaned.length === 6) {
-    return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/20${cleaned.slice(4)}`;
+function formatDateInput(val) {
+  const digits = val.replace(/\D/g, '');
+  if (digits.length === 6) {
+    return `${digits.slice(0,2)}/${digits.slice(2,4)}/20${digits.slice(4)}`;
+  } else if (digits.length === 8) {
+    return `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
+  } else {
+    return val;
   }
-  return value;
 }
 
-['warehouse_date', 'container_date', 'arrival_date'].forEach(id => {
-  document.getElementById(id).addEventListener('input', (e) => {
-    e.target.value = padDateInput(e.target.value);
-  });
-});
+function handleDateInput(e) {
+  const val = e.target.value;
+  e.target.value = formatDateInput(val);
+}
 
+// ✅ 自动跳下一行（支持文字字段）
 document.querySelectorAll('#bonsaiForm input').forEach(el => {
   el.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (el.required && el.type === 'text' && !validateNumberField(el)) return;
       const form = el.form;
-      const elements = Array.from(form.elements).filter(e => e.tagName === 'INPUT' || e.tagName === 'SELECT');
-      const index = elements.indexOf(el);
-      if (index > -1 && index + 1 < elements.length) {
-        elements[index + 1].focus();
+      const index = Array.from(form.elements).indexOf(el);
+      if (index > -1 && index + 1 < form.elements.length) {
+        form.elements[index + 1].focus();
       }
     }
   });
+});
+
+// ✅ 日期输入格式修正
+['warehouse_date', 'arrival_date', 'container_date'].forEach(id => {
+  document.getElementById(id).addEventListener('input', handleDateInput);
+});
+
+// ✅ 图片网址预览链接
+const imageInput = document.getElementById('image_url');
+const imageLink = document.getElementById('image_link');
+imageInput.addEventListener('input', () => {
+  const url = imageInput.value.trim();
+  if (url.startsWith('http')) {
+    imageLink.textContent = url;
+    imageLink.href = url;
+    imageLink.style.display = 'inline';
+  } else {
+    imageLink.style.display = 'none';
+  }
+});
+imageLink.addEventListener('click', () => {
+  window.open(imageLink.href, '_blank');
 });
 </script>
 </body>
