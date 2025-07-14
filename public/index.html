@@ -63,6 +63,9 @@
       border: 2px solid red;
       background-color: #ffe6e6;
     }
+    input[type="url"] {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -82,19 +85,19 @@
       <option value="NTD">NTD</option>
       <option value="IDR">IDR</option>
     </select>
-    <label>数量（棵）</label><input id="quantity" type="number" step="1" required />
-    <label>图片网址（URL）</label><input id="image_url" required />
+    <label>数量（棵）</label><input id="quantity" type="number" required />
+    <label>图片网址（URL）</label><input id="image_url" type="url" required />
     <label>发货单号</label><input id="shipment_id" />
-    <label>这次发货总数（棵）</label><input id="total_plants" type="number" step="1" required />
+    <label>这次发货总数（棵）</label><input id="total_plants" type="number" required />
     <label>这次发货总金额（RM）</label><input id="total_amount" type="text" required />
     <label>包装明细</label><input id="packing" />
     <label class="full">抵达仓库日期</label><input id="warehouse_date" type="text" placeholder="dd/mm/yyyy" class="full" maxlength="10" required />
 
     <h2 class="full">📦 发货资料</h2>
-    <label>装柜日期</label><input id="container_date" type="date" />
+    <label>装柜日期</label><input id="container_date" type="text" placeholder="dd/mm/yyyy" maxlength="10" />
     <label>海运单号</label><input id="shipping_no" />
     <label>到大马运费（RM）</label><input id="freight_fee" type="text" />
-    <label>抵达大马日期</label><input id="arrival_date" type="date" />
+    <label>抵达大马日期</label><input id="arrival_date" type="text" placeholder="dd/mm/yyyy" maxlength="10" />
     <label class="full">运输天数（自动）</label><input id="days" disabled class="full" />
     <label class="full">运费比例（自动）</label><input id="freight_ratio" disabled class="full" />
 
@@ -122,7 +125,7 @@ function formatCurrency(value) {
 
 function validateNumberField(el) {
   const value = el.value.replace(/,/g, '');
-  if (!/^(\d+)(\.\d{1,2})?$/.test(value)) {
+  if (!/^-?\d+(\.\d{1,2})?$/.test(value)) {
     el.classList.add('error');
     return false;
   } else {
@@ -140,48 +143,25 @@ function padDateInput(value) {
   return value;
 }
 
-document.getElementById('warehouse_date').addEventListener('input', (e) => {
-  e.target.value = padDateInput(e.target.value);
-});
-
-document.querySelectorAll('input[type="text"]').forEach(el => {
-  el.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (el.required && !validateNumberField(el)) return;
-      const form = el.form;
-      const index = Array.from(form.elements).indexOf(el);
-      if (index > -1 && index + 1 < form.elements.length) {
-        form.elements[index + 1].focus();
-      }
-    }
+['warehouse_date', 'container_date', 'arrival_date'].forEach(id => {
+  document.getElementById(id).addEventListener('input', (e) => {
+    e.target.value = padDateInput(e.target.value);
   });
 });
 
-document.querySelectorAll('input[type="number"]').forEach(el => {
+document.querySelectorAll('#bonsaiForm input').forEach(el => {
   el.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      if (el.required && el.type === 'text' && !validateNumberField(el)) return;
       const form = el.form;
-      const index = Array.from(form.elements).indexOf(el);
-      if (index > -1 && index + 1 < form.elements.length) {
-        form.elements[index + 1].focus();
+      const elements = Array.from(form.elements).filter(e => e.tagName === 'INPUT' || e.tagName === 'SELECT');
+      const index = elements.indexOf(el);
+      if (index > -1 && index + 1 < elements.length) {
+        elements[index + 1].focus();
       }
     }
   });
-});
-
-document.getElementById('image_url').addEventListener('input', (e) => {
-  const value = e.target.value;
-  if (value.startsWith('http')) {
-    e.target.style.textDecoration = 'underline';
-    e.target.style.color = 'blue';
-    e.target.onclick = () => window.open(value, '_blank');
-  } else {
-    e.target.style.textDecoration = '';
-    e.target.style.color = '';
-    e.target.onclick = null;
-  }
 });
 </script>
 </body>
