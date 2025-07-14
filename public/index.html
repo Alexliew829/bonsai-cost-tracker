@@ -59,6 +59,10 @@
       color: red;
       font-weight: bold;
     }
+    .error {
+      border: 2px solid red;
+      background-color: #ffe6e6;
+    }
   </style>
 </head>
 <body>
@@ -68,9 +72,9 @@
   </div>
   <h2>🌱 盆栽资料（含内陆发货信息）</h2>
   <form id="bonsaiForm">
-    <label>供应商</label><input id="supplier" />
-    <label>品种</label><input id="variety" />
-    <label>单价（原币）</label><input id="price" type="text" inputmode="decimal" pattern="\\d+(\\.\\d{1,2})?" />
+    <label>供应商</label><input id="supplier" required />
+    <label>品种</label><input id="variety" required />
+    <label>单价（原币）</label><input id="price" type="text" required />
     <label>币值</label>
     <select id="currency">
       <option value="CNY">CNY</option>
@@ -78,26 +82,26 @@
       <option value="NTD">NTD</option>
       <option value="IDR">IDR</option>
     </select>
-    <label>数量（棵）</label><input id="quantity" type="text" inputmode="decimal" pattern="\\d+" />
-    <label>图片网址（URL）</label><input id="image_url" />
+    <label>数量（棵）</label><input id="quantity" type="text" required />
+    <label>图片网址（URL）</label><input id="image_url" required />
     <label>发货单号</label><input id="shipment_id" />
-    <label>这次发货总数（棵）</label><input id="total_plants" type="text" inputmode="decimal" pattern="\\d+" />
-    <label>这次发货总金额（RM）</label><input id="total_amount" type="text" inputmode="decimal" pattern="\\d+(\\.\\d{1,2})?" />
+    <label>这次发货总数（棵）</label><input id="total_plants" type="text" required />
+    <label>这次发货总金额（RM）</label><input id="total_amount" type="text" required />
     <label>包装明细</label><input id="packing" />
-    <label class="full">抵达仓库日期</label><input id="warehouse_date" type="text" placeholder="dd/mm/yyyy" class="full" maxlength="8" />
+    <label class="full">抵达仓库日期</label><input id="warehouse_date" type="text" placeholder="dd/mm/yyyy" class="full" maxlength="10" required />
 
     <h2 class="full">📦 发货资料</h2>
     <label>装柜日期</label><input id="container_date" type="date" />
     <label>海运单号</label><input id="shipping_no" />
-    <label>到大马运费（RM）</label><input id="freight_fee" type="text" inputmode="decimal" pattern="\\d+(\\.\\d{1,2})?" />
+    <label>到大马运费（RM）</label><input id="freight_fee" type="text" />
     <label>抵达大马日期</label><input id="arrival_date" type="date" />
     <label class="full">运输天数（自动）</label><input id="days" disabled class="full" />
     <label class="full">运费比例（自动）</label><input id="freight_ratio" disabled class="full" />
 
     <h2 class="full">🧾 成本与销售细节</h2>
-    <label>苔藓成本 RM</label><input id="moss" type="text" inputmode="decimal" pattern="\\d+(\\.\\d{1,2})?" />
-    <label>花盆成本 RM</label><input id="pot" type="text" inputmode="decimal" pattern="\\d+(\\.\\d{1,2})?" />
-    <label>本地运输 RM</label><input id="local" type="text" inputmode="decimal" pattern="\\d+(\\.\\d{1,2})?" />
+    <label>苔藓成本 RM</label><input id="moss" type="text" />
+    <label>花盆成本 RM</label><input id="pot" type="text" />
+    <label>本地运输 RM</label><input id="local" type="text" />
     <label>原成本（自动）</label><input id="base_cost" disabled />
     <label>总成本（自动）</label><input id="total_cost" disabled />
     <label>销售价 20%</label><input id="price_20" disabled />
@@ -109,37 +113,62 @@
   <div class="center-btn">
     <button onclick="saveToStorage()">💾 手动储存全部资料</button>
   </div>
-  <script>
-    const rates = { CNY: 1.5, VND: 5555, NTD: 6.8, IDR: 3800 };
 
-    function formatNumber(n) {
-      return parseFloat(n).toFixed(2);
-    }
+<script>
+function formatCurrency(value) {
+  const n = parseFloat(value.replace(/,/g, ''));
+  return isNaN(n) ? '' : n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
-    function padDateInput(value) {
-      const cleaned = value.replace(/[^0-9]/g, "");
-      if (cleaned.length === 6) {
-        return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4)}`;
+function validateNumberField(el) {
+  const value = el.value.replace(/,/g, '');
+  if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+    el.classList.add('error');
+    return false;
+  } else {
+    el.value = formatCurrency(value);
+    el.classList.remove('error');
+    return true;
+  }
+}
+
+function padDateInput(value) {
+  const cleaned = value.replace(/[^0-9]/g, "");
+  if (cleaned.length === 6) {
+    return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/20${cleaned.slice(4)}`;
+  }
+  return value;
+}
+
+document.getElementById('warehouse_date').addEventListener('input', (e) => {
+  e.target.value = padDateInput(e.target.value);
+});
+
+document.querySelectorAll('input[type="text"]').forEach(el => {
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!validateNumberField(el) && el.required) return;
+      const form = el.form;
+      const index = Array.from(form.elements).indexOf(el);
+      if (index > -1 && index + 1 < form.elements.length) {
+        form.elements[index + 1].focus();
       }
-      return value;
     }
+  });
+});
 
-    document.getElementById('warehouse_date').addEventListener('input', (e) => {
-      e.target.value = padDateInput(e.target.value);
-    });
-
-    document.querySelectorAll('input[type="text"]').forEach(el => {
-      el.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          const form = el.form;
-          const index = Array.from(form.elements).indexOf(el);
-          if (index > -1 && index + 1 < form.elements.length) {
-            form.elements[index + 1].focus();
-          }
-        }
-      });
-    });
-  </script>
+document.getElementById('image_url').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const url = e.target.value;
+    if (url.startsWith('http')) {
+      window.open(url, '_blank');
+    } else {
+      window.open('https://' + url, '_blank');
+    }
+  }
+});
+</script>
 </body>
 </html>
