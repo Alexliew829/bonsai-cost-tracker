@@ -82,10 +82,10 @@
       <option value="NTD">NTD</option>
       <option value="IDR">IDR</option>
     </select>
-    <label>数量（棵）</label><input id="quantity" type="text" required />
+    <label>数量（棵）</label><input id="quantity" type="number" step="1" required />
     <label>图片网址（URL）</label><input id="image_url" required />
     <label>发货单号</label><input id="shipment_id" />
-    <label>这次发货总数（棵）</label><input id="total_plants" type="text" required />
+    <label>这次发货总数（棵）</label><input id="total_plants" type="number" step="1" required />
     <label>这次发货总金额（RM）</label><input id="total_amount" type="text" required />
     <label>包装明细</label><input id="packing" />
     <label class="full">抵达仓库日期</label><input id="warehouse_date" type="text" placeholder="dd/mm/yyyy" class="full" maxlength="10" required />
@@ -122,7 +122,7 @@ function formatCurrency(value) {
 
 function validateNumberField(el) {
   const value = el.value.replace(/,/g, '');
-  if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+  if (!/^(\d+)(\.\d{1,2})?$/.test(value)) {
     el.classList.add('error');
     return false;
   } else {
@@ -148,7 +148,7 @@ document.querySelectorAll('input[type="text"]').forEach(el => {
   el.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (!validateNumberField(el) && el.required) return;
+      if (el.required && !validateNumberField(el)) return;
       const form = el.form;
       const index = Array.from(form.elements).indexOf(el);
       if (index > -1 && index + 1 < form.elements.length) {
@@ -158,15 +158,29 @@ document.querySelectorAll('input[type="text"]').forEach(el => {
   });
 });
 
-document.getElementById('image_url').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const url = e.target.value;
-    if (url.startsWith('http')) {
-      window.open(url, '_blank');
-    } else {
-      window.open('https://' + url, '_blank');
+document.querySelectorAll('input[type="number"]').forEach(el => {
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = el.form;
+      const index = Array.from(form.elements).indexOf(el);
+      if (index > -1 && index + 1 < form.elements.length) {
+        form.elements[index + 1].focus();
+      }
     }
+  });
+});
+
+document.getElementById('image_url').addEventListener('input', (e) => {
+  const value = e.target.value;
+  if (value.startsWith('http')) {
+    e.target.style.textDecoration = 'underline';
+    e.target.style.color = 'blue';
+    e.target.onclick = () => window.open(value, '_blank');
+  } else {
+    e.target.style.textDecoration = '';
+    e.target.style.color = '';
+    e.target.onclick = null;
   }
 });
 </script>
