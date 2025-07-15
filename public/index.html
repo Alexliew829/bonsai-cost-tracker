@@ -89,7 +89,7 @@
 <body>
   <div class="header">
     <img src="logo.png" alt="logo">
-    <h1>盆栽成本记录系统 Lover Legend gardening</h1>
+    <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
   </div>
   <form id="bonsaiForm">
     <!-- ... [内容省略，保持不变] ... -->
@@ -134,12 +134,12 @@ function validateDate(input) {
     } else {
       input.value = `${day}/${month}/${year.slice(-2)}`;
     }
-    input.removeAttribute('title');
+    input.setCustomValidity('');
   } else if (val.length > 0) {
-    input.value = '';
-    input.setAttribute('title', '请输入有效日期');
+    input.setCustomValidity('请输入有效日期');
+    input.reportValidity();
   } else {
-    input.removeAttribute('title');
+    input.setCustomValidity('');
   }
 }
 
@@ -149,17 +149,18 @@ document.getElementById('price').addEventListener('input', () => {
 document.getElementById('currency').addEventListener('change', () => {
   updateRMPrice();
 });
-document.querySelectorAll('input[type="text"], input[type="url"]').forEach(input => {
+document.querySelectorAll('input[type="text"], input[type="url"], input[type="number"], input[type="date"]').forEach(input => {
   input.addEventListener('blur', formatAllCurrencyInputs);
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
-      if (input.title === '请输入有效日期') return; // ❌ 日期错误，不跳格
+      if (input.validationMessage) return;
       e.preventDefault();
       const form = e.target.form;
       const index = Array.prototype.indexOf.call(form.elements, e.target);
       for (let i = index + 1; i < form.elements.length; i++) {
-        if (form.elements[i].tagName === 'INPUT' || form.elements[i].tagName === 'TEXTAREA' || form.elements[i].tagName === 'SELECT') {
-          form.elements[i].focus();
+        const el = form.elements[i];
+        if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') && !el.disabled && el.type !== 'hidden') {
+          el.focus();
           break;
         }
       }
