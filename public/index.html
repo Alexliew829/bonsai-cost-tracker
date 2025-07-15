@@ -71,6 +71,13 @@
       text-decoration: underline;
       cursor: pointer;
     }
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .row > * {
+      flex: 1;
+    }
   </style>
 </head>
 <body>
@@ -82,14 +89,19 @@
     <h2>🌱 盆栽资料（含内陆发货信息）</h2>
     <label>供应商</label><input id="supplier" required />
     <label>品种</label><input id="variety" required />
-    <label>单价（原币）</label><input id="price" type="text" required />
-    <label>币值</label>
-    <select id="currency">
-      <option value="CNY">CNY</option>
-      <option value="VND">VND</option>
-      <option value="NTD">NTD</option>
-      <option value="IDR">IDR</option>
-    </select>
+
+    <label>币值 + 单价（原币）</label>
+    <div class="row">
+      <select id="currency">
+        <option value="CNY">CNY</option>
+        <option value="VND">VND</option>
+        <option value="NTD">NTD</option>
+        <option value="IDR">IDR</option>
+      </select>
+      <input id="price" type="text" required />
+    </div>
+    <label>换算成马币（自动）</label><input id="price_rm" disabled />
+
     <label>数量（棵）</label><input id="quantity" type="number" step="1" required />
     <label>图片网址（URL）</label><input id="image_url" type="url" class="url-link" />
     <label>发货单号</label><input id="shipment_id" />
@@ -129,79 +141,23 @@ function formatCurrency(value) {
   return isNaN(n) ? '' : n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function validateAndFormat(el) {
-  const value = el.value.replace(/,/g, '');
-  if (!/^\d+(\.\d{1,2})?$/.test(value)) {
-    el.classList.add('error');
-  } else {
-    el.value = formatCurrency(value);
-    el.classList.remove('error');
-  }
+function convertToRM() {
+  const rates = {
+    CNY: 1.55,
+    NTD: 1 / 0.15,
+    VND: 1 / 0.00018,
+    IDR: 1 / 0.00028
+  };
+  const currency = document.getElementById('currency').value;
+  const price = parseFloat(document.getElementById('price').value.replace(/,/g, ''));
+  const rate = rates[currency];
+  const result = (!isNaN(price) && rate) ? price / rate : '';
+  document.getElementById('price_rm').value = isNaN(result) ? '' : result.toLocaleString('en-MY', { minimumFractionDigits: 2 });
 }
 
-function isValidDate(str) {
-  const [dd, mm, yyyy] = str.split('/');
-  const d = new Date(`${yyyy}-${mm}-${dd}`);
-  return d instanceof Date && !isNaN(d) && d.getDate() == dd && (parseInt(mm) >= 1 && parseInt(mm) <= 12);
-}
+document.getElementById('currency').addEventListener('change', convertToRM);
+document.getElementById('price').addEventListener('input', convertToRM);
 
-function formatDateInput(val) {
-  const digits = val.replace(/\D/g, '');
-  if (digits.length === 6) return `${digits.slice(0,2)}/${digits.slice(2,4)}/20${digits.slice(4)}`;
-  if (digits.length === 8) return `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
-  return val;
-}
-
-function handleDateInput(e) {
-  const input = e.target;
-  input.value = formatDateInput(input.value);
-  if (input.value.length === 10 && !isValidDate(input.value)) {
-    input.classList.add('error');
-  } else {
-    input.classList.remove('error');
-  }
-}
-
-// 自动跳下一格
-document.querySelectorAll('#bonsaiForm input').forEach(el => {
-  el.addEventListener('keydown', e => {
-    const form = el.form;
-    const index = Array.from(form.elements).indexOf(el);
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (index > -1 && index + 1 < form.elements.length) {
-        form.elements[index + 1].focus();
-      }
-    }
-  });
-
-  el.addEventListener('blur', () => {
-    if (el.type === 'text' && el.id !== 'image_url' && el.id.includes('price') || el.id.includes('fee') || el.id === 'local' || el.id === 'moss' || el.id === 'pot' || el.id === 'total_amount') {
-      validateAndFormat(el);
-    }
-  });
-});
-
-// 日期监听
-['warehouse_date', 'arrival_date', 'container_date'].forEach(id => {
-  document.getElementById(id).addEventListener('input', handleDateInput);
-});
-
-// 图片网址变链接
-const imgInput = document.getElementById('image_url');
-imgInput.addEventListener('input', () => {
-  if (imgInput.value.startsWith('http')) {
-    imgInput.style.color = 'blue';
-    imgInput.style.textDecoration = 'underline';
-    imgInput.style.cursor = 'pointer';
-    imgInput.onclick = () => window.open(imgInput.value, '_blank');
-  } else {
-    imgInput.style = '';
-    imgInput.onclick = null;
-  }
-});
-
-// ✅ 储存资料到 localStorage
 function saveToStorage() {
   const data = {};
   document.querySelectorAll('#bonsaiForm input, #bonsaiForm select').forEach(el => {
@@ -211,17 +167,15 @@ function saveToStorage() {
   alert('✅ 资料已储存！');
 }
 
-// ✅ 从 localStorage 载入资料
 function loadFromStorage() {
   const data = JSON.parse(localStorage.getItem('bonsai_form_data') || '{}');
   Object.keys(data).forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = data[id];
   });
+  convertToRM(); // 载入后重新计算一次 RM
 }
 loadFromStorage();
-
-// ✅ 每 5 分钟自动储存
 setInterval(saveToStorage, 5 * 60 * 1000);
 </script>
 </body>
