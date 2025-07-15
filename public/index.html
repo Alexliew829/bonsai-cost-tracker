@@ -154,7 +154,7 @@
 const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
 
 function formatCurrency(val) {
-  const num = parseFloat(val);
+  const num = parseFloat(val.toString().replace(/,/g, ''));
   return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -212,7 +212,6 @@ function validateDate(input) {
   }
 }
 
-// ➤ 回车跳格 + 日期验证 + 金额格式化
 const fields = Array.from(document.querySelectorAll('input, select, textarea'));
 fields.forEach((el, i) => {
   el.addEventListener('keydown', e => {
