@@ -1,91 +1,73 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>盆栽成本记录系统 Lover Legend Gardening</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>盆栽成本记录系统 Lover Legend gardening</title>
   <style>
     body {
       font-family: sans-serif;
-      padding: 20px;
-      background: #f9f9f9;
-      max-width: 1200px;
+      background-color: #f7f7f7;
+      padding: 0 20px 40px;
+      max-width: 800px;
       margin: auto;
     }
-    h2 {
+    h1 {
       text-align: center;
-    }
-    h2::after {
-      content: " Lover Legend Gardening";
-      font-size: 14px;
-      font-weight: normal;
-      color: #666;
-      display: block;
-    }
-    form {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
-    label {
-      font-weight: bold;
-    }
-    textarea, input, select {
-      padding: 8px;
-      font-size: 16px;
-      width: 100%;
-      resize: vertical;
-    }
-    input[type="number"]::-webkit-inner-spin-button,
-    input[type="number"]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .section-title {
-      grid-column: span 2;
-      font-size: 18px;
-      font-weight: bold;
       margin-top: 20px;
     }
-    .readonly {
-      background-color: #eee;
+    h2 {
+      margin-top: 30px;
+      font-size: 20px;
+      color: #333;
     }
-    .price-box {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      grid-column: span 2;
-    }
-    .result-box {
-      background: #fff;
-      padding: 15px;
-      border: 1px solid #ccc;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-    .highlight {
-      color: red;
+    label {
+      display: block;
+      margin: 10px 0 4px;
       font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    input:invalid {
+      border: 2px solid red;
+    }
+    .section {
+      margin-top: 40px;
+      border-top: 2px solid #ccc;
+      padding-top: 20px;
+    }
+    .logo {
+      display: block;
+      margin: 0 auto 10px;
+      max-height: 60px;
+    }
+    .link-input {
+      word-break: break-all;
     }
   </style>
 </head>
 <body>
-  <h2>盆栽成本记录系统</h2>
-  <img src="favicon.png" alt="icon" style="width: 60px; display: block; margin: auto;">
-  <form>
-    <div class="section-title">🌱 盆栽资料（含内陆发货信息）</div>
+  <img class="logo" src="/logo.png" alt="logo" />
+  <h1>盆栽成本记录系统 Lover Legend gardening</h1>
 
+  <h2>🌱 盆栽资料（含内陆发货信息）</h2>
+
+  <form>
     <label>供应商</label>
-    <textarea placeholder="请输入供应商" rows="2"></textarea>
+    <input type="text" required onkeydown="disableEnter(event)">
 
     <label>品种</label>
-    <textarea placeholder="请输入品种" rows="2"></textarea>
+    <input type="text" required onkeydown="disableEnter(event)">
 
     <label>单价（原币）</label>
-    <input type="number" step="any" oninput="formatCurrency(this)">
+    <input type="number" step="0.01" required onblur="formatCurrency(this)">
 
     <label>币值</label>
-    <select>
+    <select required>
       <option>CNY</option>
       <option>VND</option>
       <option>NTD</option>
@@ -93,10 +75,11 @@
     </select>
 
     <label>数量（棵）</label>
-    <input type="number" step="any" oninput="formatCurrency(this)">
+    <input type="number" required>
 
     <label>图片网址（URL）</label>
-    <input type="url" id="imgUrl" onblur="convertToLink(this)">
+    <input type="url" class="link-input" onchange="updateLink(this)">
+    <div id="urlPreview"></div>
 
     <label>发货单号</label>
     <input type="text">
@@ -105,64 +88,97 @@
     <input type="number">
 
     <label>这次发货总金额（RM）</label>
-    <input type="text" class="readonly" readonly>
+    <input type="text" onblur="formatCurrency(this)">
 
     <label>包装明细</label>
-    <textarea rows="2"></textarea>
+    <input type="text">
 
-    <div class="section-title">🧮 成本计算</div>
+    <label>抵达仓库日期</label>
+    <input type="text" placeholder="dd/mm/yyyy" oninput="formatDate(this)">
 
-    <label>花盆（RM）</label>
-    <input type="number" step="any" oninput="updateCost()">
+    <div class="section">
+      <h2>🚛 发货资料</h2>
 
-    <label>苔藓（RM）</label>
-    <input type="number" step="any" oninput="updateCost()">
+      <label>装柜日期</label>
+      <input type="text" placeholder="dd/mm/yyyy" id="shipDate" oninput="formatDate(this); calcDays()">
 
-    <label>本地运输（RM）</label>
-    <input type="number" step="any" oninput="updateCost()">
+      <label>海运单号</label>
+      <input type="text">
 
-    <label>总成本（RM）</label>
-    <input type="text" id="totalCost" class="readonly" readonly>
+      <label>到大马运费（RM）</label>
+      <input type="number" step="0.01" id="shippingCost" onblur="formatCurrency(this); calcRatio()">
 
-    <div class="section-title">💰 不同利润售价</div>
+      <label>抵达大马日期</label>
+      <input type="text" placeholder="dd/mm/yyyy" id="arriveDate" oninput="formatDate(this); calcDays()">
 
-    <div class="result-box">
-      <div><strong>20% 售价：</strong>RM <span id="p20"></span></div>
-      <div><strong>30% 售价：</strong>RM <span id="p30"></span></div>
-      <div><strong>40% 售价：</strong>RM <span id="p40"></span></div>
-      <div><strong>50% 售价：</strong>RM <span id="p50" class="highlight"></span></div>
-      <div><strong>55% 售价：</strong>RM <span id="p55"></span></div>
+      <label>运输天数（自动）</label>
+      <input type="text" id="daysResult" readonly>
+
+      <label>运费比例（自动）</label>
+      <input type="text" id="ratioResult" readonly>
     </div>
   </form>
 
   <script>
-    function formatCurrency(el) {
-      const value = parseFloat(el.value);
-      if (!isNaN(value)) {
-        el.value = value.toFixed(2);
+    function disableEnter(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
       }
     }
 
-    function convertToLink(el) {
-      const url = el.value.trim();
-      if (url) {
-        el.insertAdjacentHTML('beforebegin', `<a href="${url}" target="_blank">${url}</a><br>`);
+    function formatCurrency(input) {
+      let val = parseFloat(input.value.replace(/,/g, ''));
+      if (!isNaN(val)) {
+        input.value = val.toLocaleString('en-MY', { minimumFractionDigits: 2 });
       }
     }
 
-    function updateCost() {
-      const pot = parseFloat(document.querySelectorAll('input')[12].value) || 0;
-      const moss = parseFloat(document.querySelectorAll('input')[13].value) || 0;
-      const local = parseFloat(document.querySelectorAll('input')[14].value) || 0;
-      const total = pot + moss + local;
+    function updateLink(input) {
+      const div = document.getElementById('urlPreview');
+      div.innerHTML = '';
+      if (input.value.startsWith('http')) {
+        div.innerHTML = `<a href="${input.value}" target="_blank">点击查看图片</a>`;
+      }
+    }
 
-      document.getElementById("totalCost").value = total.toFixed(2);
+    function formatDate(input) {
+      let raw = input.value.replace(/[^0-9]/g, '');
+      if (raw.length === 6 || raw.length === 8) {
+        let d = raw.slice(0, 2);
+        let m = raw.slice(2, 4);
+        let y = raw.slice(4);
+        if (y.length === 2) y = '20' + y;
+        input.value = `${d}/${m}/${y}`;
+      }
+    }
 
-      document.getElementById("p20").innerText = (total * 1.26 * 1.12).toFixed(2);
-      document.getElementById("p30").innerText = (total * 1.43 * 1.12).toFixed(2);
-      document.getElementById("p40").innerText = (total * 1.67 * 1.12).toFixed(2);
-      document.getElementById("p50").innerText = (total * 2.0 * 1.12).toFixed(2);
-      document.getElementById("p55").innerText = (total * 2.23 * 1.12).toFixed(2);
+    function calcDays() {
+      const ship = document.getElementById('shipDate').value;
+      const arrive = document.getElementById('arriveDate').value;
+      const out = document.getElementById('daysResult');
+
+      if (/\d{2}\/\d{2}\/\d{4}/.test(ship) && /\d{2}\/\d{2}\/\d{4}/.test(arrive)) {
+        const [ds, ms, ys] = ship.split('/');
+        const [da, ma, ya] = arrive.split('/');
+        const start = new Date(`${ys}-${ms}-${ds}`);
+        const end = new Date(`${ya}-${ma}-${da}`);
+        const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
+        if (!isNaN(diff)) out.value = diff + ' 天';
+      } else {
+        out.value = '';
+      }
+    }
+
+    function calcRatio() {
+      const cost = parseFloat(document.getElementById('shippingCost').value.replace(/,/g, ''));
+      const totalQty = document.querySelector('input[placeholder="dd/mm/yyyy"]').previousElementSibling.value;
+      const out = document.getElementById('ratioResult');
+      const qty = parseFloat(totalQty);
+      if (!isNaN(cost) && !isNaN(qty) && qty > 0) {
+        out.value = (cost / qty).toFixed(2);
+      } else {
+        out.value = '';
+      }
     }
   </script>
 </body>
