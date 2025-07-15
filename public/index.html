@@ -2,14 +2,14 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>盆栽成本记录系统 Lover Legend Gardening</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>盆根成本记录系统 Lover Legend Gardening</title>
   <style>
     body {
       font-family: sans-serif;
       background-color: #f7f7f7;
       padding: 0 20px 40px;
-      max-width: 960px;
+      max-width: 1000px;
       margin: auto;
     }
     h1 {
@@ -26,14 +26,16 @@
       margin: 10px 0 4px;
       font-weight: bold;
     }
-    input, select {
+    input, select, textarea {
       width: 100%;
       padding: 8px;
       font-size: 16px;
       box-sizing: border-box;
     }
-    input:invalid {
-      border: 2px solid red;
+    .two-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
     }
     .section {
       margin-top: 40px;
@@ -42,22 +44,14 @@
     }
     .logo {
       display: block;
-      margin: 10px auto;
-      max-height: 60px;
+      margin: 0 auto 10px;
+      max-height: 70px;
     }
-    .link-input {
+    a {
       word-break: break-all;
+      color: blue;
     }
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    .price-box {
-      font-size: 18px;
-      margin-top: 10px;
-    }
-    .price-box.red {
+    .bold-red {
       color: red;
       font-weight: bold;
     }
@@ -65,24 +59,21 @@
 </head>
 <body>
   <img class="logo" src="/logo.png" alt="logo" />
-  <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
-
-  <h2>🌱 盆栽资料（含内陆发货信息）</h2>
+  <h1>盆根成本记录系统 Lover Legend Gardening</h1>
+  <h2>🌱 盆根资料（含内陆发货信息）</h2>
   <form>
-    <div class="grid-2">
+    <div class="two-cols">
       <div>
         <label>供应商</label>
-        <input type="text" required>
+        <textarea required></textarea>
       </div>
       <div>
         <label>品种</label>
-        <input type="text" required>
+        <textarea required></textarea>
       </div>
-    </div>
-    <div class="grid-2">
       <div>
         <label>单价（原币）</label>
-        <input type="number" step="0.01" required onblur="formatCurrency(this)" id="unitPrice">
+        <input type="text" onblur="formatCurrency(this)" required>
       </div>
       <div>
         <label>币值</label>
@@ -93,97 +84,60 @@
           <option>IDR</option>
         </select>
       </div>
-    </div>
-    <div class="grid-2">
       <div>
         <label>数量（棵）</label>
-        <input type="number" required id="qty">
+        <input type="text" onblur="formatCurrency(this)" required>
       </div>
       <div>
         <label>图片网址（URL）</label>
-        <input type="url" class="link-input" onchange="updateLink(this)">
-        <div id="urlPreview"></div>
+        <a id="imageLink" href="#" target="_blank"></a>
+        <input type="url" oninput="updateLink(this)">
       </div>
-    </div>
-    <label>发货单号</label>
-    <input type="text">
-
-    <div class="grid-2">
+      <div>
+        <label>发货单号</label>
+        <input type="text">
+      </div>
       <div>
         <label>这次发货总数（棵）</label>
-        <input type="number">
+        <input type="text" readonly>
       </div>
       <div>
         <label>这次发货总金额（RM）</label>
-        <input type="text" onblur="formatCurrency(this)" id="originalCost">
+        <input type="text" readonly>
+      </div>
+      <div>
+        <label>包装明细</label>
+        <textarea></textarea>
       </div>
     </div>
-
-    <label>包装明细</label>
-    <input type="text">
-
-    <label>抵达仓库日期</label>
-    <input type="text" placeholder="dd/mm/yyyy" oninput="formatDate(this)">
-
     <div class="section">
-      <h2>🚛 发货资料</h2>
-      <div class="grid-2">
+      <h2>🚛 发货详情</h2>
+      <div class="two-cols">
         <div>
           <label>装柜日期</label>
-          <input type="text" placeholder="dd/mm/yyyy" id="shipDate" oninput="formatDate(this); calcDays()">
+          <input type="text" id="shipDate" placeholder="dd/mm/yyyy" oninput="formatDate(this); calcDays()">
         </div>
         <div>
           <label>海运单号</label>
           <input type="text">
         </div>
-      </div>
-      <div class="grid-2">
         <div>
           <label>到大马运费（RM）</label>
-          <input type="number" step="0.01" id="shippingCost" onblur="formatCurrency(this); calcRatio()">
+          <input type="text" id="shippingCost" onblur="formatCurrency(this); calcRatio()">
         </div>
         <div>
           <label>抵达大马日期</label>
-          <input type="text" placeholder="dd/mm/yyyy" id="arriveDate" oninput="formatDate(this); calcDays()">
+          <input type="text" id="arriveDate" placeholder="dd/mm/yyyy" oninput="formatDate(this); calcDays()">
         </div>
-      </div>
-      <div class="grid-2">
         <div>
-          <label>运输天数（自动）</label>
+          <label>运费天数</label>
           <input type="text" id="daysResult" readonly>
         </div>
         <div>
-          <label>运费比例（自动）</label>
+          <label>运费比例</label>
           <input type="text" id="ratioResult" readonly>
         </div>
       </div>
-    </div>
-
-    <div class="section">
-      <h2>📦 成本计算与销售价格</h2>
-      <div class="grid-2">
-        <div>
-          <label>花盆 (RM)</label>
-          <input type="number" step="0.01" id="potCost" oninput="calcTotalCost()">
-        </div>
-        <div>
-          <label>苔藓 (RM)</label>
-          <input type="number" step="0.01" id="mossCost" oninput="calcTotalCost()">
-        </div>
-        <div>
-          <label>本地运输 (RM)</label>
-          <input type="number" step="0.01" id="localCost" oninput="calcTotalCost()">
-        </div>
-        <div>
-          <label>总成本 (自动)</label>
-          <input type="text" id="totalCost" readonly>
-        </div>
-      </div>
-      <div class="price-box">20% 利润售价：<span id="price20"></span></div>
-      <div class="price-box">30% 利润售价：<span id="price30"></span></div>
-      <div class="price-box">40% 利润售价：<span id="price40"></span></div>
-      <div class="price-box red">50% 利润售价：<span id="price50"></span></div>
-      <div class="price-box">55% 利润售价：<span id="price55"></span></div>
     </div>
   </form>
 
@@ -193,14 +147,16 @@
       if (!isNaN(val)) {
         input.value = val.toLocaleString('en-MY', { minimumFractionDigits: 2 });
       }
-      calcTotalCost();
     }
 
     function updateLink(input) {
-      const div = document.getElementById('urlPreview');
-      div.innerHTML = '';
+      const link = document.getElementById('imageLink');
       if (input.value.startsWith('http')) {
-        div.innerHTML = `<a href="${input.value}" target="_blank">点击查看图片</a>`;
+        link.href = input.value;
+        link.textContent = input.value;
+      } else {
+        link.textContent = '';
+        link.href = '#';
       }
     }
 
@@ -219,40 +175,29 @@
       const ship = document.getElementById('shipDate').value;
       const arrive = document.getElementById('arriveDate').value;
       const out = document.getElementById('daysResult');
-      if (/\d{2}\/\d{2}\/\d{4}/.test(ship) && /\d{2}\/\d{2}\/\d{4}/.test(arrive)) {
+
+      if (ship.match(/\d{2}\/\d{2}\/\d{4}/) && arrive.match(/\d{2}\/\d{2}\/\d{4}/)) {
         const [ds, ms, ys] = ship.split('/');
         const [da, ma, ya] = arrive.split('/');
         const start = new Date(`${ys}-${ms}-${ds}`);
         const end = new Date(`${ya}-${ma}-${da}`);
         const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
         if (!isNaN(diff)) out.value = diff + ' 天';
-        else out.value = '';
-      }
-    }
-
-    function calcRatio() {
-      const cost = parseFloat(document.getElementById('shippingCost').value.replace(/,/g, ''));
-      const qty = parseFloat(document.getElementById('qty').value);
-      const out = document.getElementById('ratioResult');
-      if (!isNaN(cost) && !isNaN(qty) && qty > 0) {
-        out.value = (cost / qty).toFixed(2);
       } else {
         out.value = '';
       }
     }
 
-    function calcTotalCost() {
-      const orig = parseFloat((document.getElementById('originalCost').value || '').replace(/,/g, '')) || 0;
-      const pot = parseFloat(document.getElementById('potCost').value) || 0;
-      const moss = parseFloat(document.getElementById('mossCost').value) || 0;
-      const local = parseFloat(document.getElementById('localCost').value) || 0;
-      const total = orig + pot + moss + local;
-      document.getElementById('totalCost').value = total.toFixed(2);
-      document.getElementById('price20').innerText = (total * 1.26 * 1.12).toFixed(2);
-      document.getElementById('price30').innerText = (total * 1.43 * 1.12).toFixed(2);
-      document.getElementById('price40').innerText = (total * 1.67 * 1.12).toFixed(2);
-      document.getElementById('price50').innerText = (total * 2.0 * 1.12).toFixed(2);
-      document.getElementById('price55').innerText = (total * 2.23 * 1.12).toFixed(2);
+    function calcRatio() {
+      const costInput = document.getElementById('shippingCost');
+      const cost = parseFloat(costInput.value.replace(/,/g, ''));
+      const qty = 1; // placeholder: replace with actual quantity input
+      const out = document.getElementById('ratioResult');
+      if (!isNaN(cost) && qty > 0) {
+        out.value = (cost / qty).toFixed(2);
+      } else {
+        out.value = '';
+      }
     }
   </script>
 </body>
