@@ -92,11 +92,13 @@
   </div>
   <form id="bonsaiForm">
     <h2>🌱 盆栽资料（含内陆发货信息）</h2>
-
-    <label>供应商</label><input id="supplier" required />
-    <label>品种</label><input id="variety" required />
+    <label>供应商</label>
+    <label>品种</label>
+    <input id="supplier" required />
+    <input id="variety" required />
 
     <label>币值 + 单价（原币）+ 单价（RM）</label>
+    <label>数量（棵）</label>
     <div class="row3">
       <select id="currency">
         <option value="CNY">CNY</option>
@@ -107,34 +109,64 @@
       <input id="price" type="text" required inputmode="decimal" pattern="\d*" />
       <input id="price_rm" disabled />
     </div>
+    <input id="quantity" type="text" inputmode="numeric" pattern="\d*" required />
 
-    <label>数量（棵）</label><input id="quantity" type="text" inputmode="numeric" pattern="\d*" required />
-    <label>图片网址（URL）</label><input id="image_url" type="url" class="url-link" onclick="if(this.value.startsWith('http')) window.open(this.value, '_blank')" />
-    <label>发货单号</label><input id="shipment_id" />
-    <label>这次发货总数（棵）</label><input id="total_plants" type="text" inputmode="numeric" pattern="\d*" required />
-    <label>这次发货总金额（RM）</label><input id="total_amount" type="text" required />
-    <label>包装明细</label><input id="packing" />
-    <label class="full">抵达仓库日期</label><input id="warehouse_date" type="text" placeholder="dd/mm/yyyy" maxlength="10" required />
+    <label>图片网址（URL）</label>
+    <label>发货单号</label>
+    <input id="image_url" type="url" class="url-link" onclick="if(this.value.startsWith('http')) window.open(this.value, '_blank')" />
+    <input id="shipment_id" />
+
+    <label>这次发货总数（棵）</label>
+    <label>这次发货总金额（RM）</label>
+    <input id="total_plants" type="text" inputmode="numeric" pattern="\d*" required />
+    <input id="total_amount" type="text" required />
+
+    <label>包装明细</label>
+    <label>抵达仓库日期</label>
+    <input id="packing" />
+    <input id="warehouse_date" type="text" placeholder="06/07/2025" maxlength="10" required />
 
     <h2>🚛 发货资料</h2>
-    <label>装柜日期</label><input id="container_date" type="text" placeholder="dd/mm/yyyy" />
-    <label>海运单号</label><input id="shipping_no" />
-    <label>到大马运费（RM）</label><input id="freight_fee" type="text" />
-    <label>抵达大马日期</label><input id="arrival_date" type="text" placeholder="dd/mm/yyyy" />
-    <label class="full">运输天数（自动）</label><input id="days" disabled class="full" />
-    <label class="full">运费比例（自动）</label><input id="freight_ratio" disabled class="full" />
+    <label>装柜日期</label>
+    <label>海运单号</label>
+    <input id="container_date" type="text" placeholder="06/07/2025" />
+    <input id="shipping_no" />
+
+    <label>到大马运费（RM）</label>
+    <label>抵达大马日期</label>
+    <input id="freight_fee" type="text" />
+    <input id="arrival_date" type="text" placeholder="06/07/2025" />
+
+    <label>运输天数（自动）</label>
+    <label>运费比例（自动）</label>
+    <input id="days" disabled />
+    <input id="freight_ratio" disabled />
 
     <h2>🧾 成本与销售细节</h2>
-    <label>苔藓成本 RM</label><input id="moss" type="text" />
-    <label>花盆成本 RM</label><input id="pot" type="text" />
-    <label>本地运输 RM</label><input id="local" type="text" />
-    <label>原成本（自动）</label><input id="base_cost" disabled />
-    <label>总成本（自动）</label><input id="total_cost" disabled />
-    <label>销售价 20%</label><input id="price_20" disabled />
-    <label>销售价 30%</label><input id="price_30" disabled />
-    <label>销售价 40%</label><input id="price_40" disabled />
-    <label class="highlight">销售价 50%</label><input id="price_50" disabled />
-    <label>销售价 55%</label><input id="price_55" disabled />
+    <label>苔藓成本 RM</label>
+    <label>花盆成本 RM</label>
+    <input id="moss" type="text" />
+    <input id="pot" type="text" />
+
+    <label>本地运输 RM</label>
+    <label>原成本（自动）</label>
+    <input id="local" type="text" />
+    <input id="base_cost" disabled />
+
+    <label>总成本（自动）</label>
+    <label>销售价 20%</label>
+    <input id="total_cost" disabled />
+    <input id="price_20" disabled />
+
+    <label>销售价 30%</label>
+    <label>销售价 40%</label>
+    <input id="price_30" disabled />
+    <input id="price_40" disabled />
+
+    <label class="highlight">销售价 50%</label>
+    <label>销售价 55%</label>
+    <input id="price_50" disabled />
+    <input id="price_55" disabled />
   </form>
   <div class="center-btn">
     <button type="button" onclick="saveToStorage()">📂 手动储存全部资料</button>
