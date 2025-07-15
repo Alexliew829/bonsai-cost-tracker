@@ -90,7 +90,7 @@
 <body>
   <div class="header">
     <img src="logo.png" alt="logo">
-    <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
+    <h1>盆栽成本记录系统 Lover Legend gardening</h1>
   </div>
   <form id="bonsaiForm">
     <h2>🌱 盆栽资料（含内陆发货信息）</h2>
@@ -175,17 +175,12 @@
   </div>
 <script>
 function formatCurrency(value) {
-  const num = parseFloat(value);
+  const num = parseFloat(value?.toString().replace(/,/g, ''));
   return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function updateRMPrice() {
-  const rateMap = {
-    CNY: 1 / 1.55,
-    NTD: 0.15,
-    VND: 0.00018,
-    IDR: 0.00028
-  };
+  const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
   const currency = document.getElementById('currency').value;
   const price = parseFloat(document.getElementById('price').value.replace(/,/g, ''));
   const rm = rateMap[currency] && !isNaN(price) ? price * rateMap[currency] : '';
@@ -194,24 +189,35 @@ function updateRMPrice() {
 
 function validateDateField(input) {
   const val = input.value.replace(/\D/g, '');
+  let valid = false;
   if (val.length === 6) {
     const day = val.slice(0, 2);
     const month = val.slice(2, 4);
     const year = val.slice(4);
-    const formatted = `${day}/${month}/${year}`;
-    const valid = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{2}$/.test(formatted);
-    if (valid) {
-      input.value = formatted;
-      input.setCustomValidity('');
-    } else {
-      input.setCustomValidity('请输入有效日期');
-      input.reportValidity();
-    }
-  } else {
-    input.setCustomValidity('请输入有效日期');
-    input.reportValidity();
+    input.value = `${day}/${month}/${year}`;
   }
+  valid = /^\d{2}\/\d{2}\/\d{2}$/.test(input.value);
+  input.setCustomValidity(valid ? '' : '请输入有效日期');
+  input.reportValidity();
 }
+
+function formatAllCurrencyInputs() {
+  const ids = ['price', 'total_amount', 'freight_fee', 'moss', 'pot', 'local'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = formatCurrency(el.value);
+  });
+}
+
+['price', 'total_amount', 'freight_fee', 'moss', 'pot', 'local'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('blur', formatAllCurrencyInputs);
+});
+
+['warehouse_date','container_date','arrival_date'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('blur', () => validateDateField(el));
+});
 
 document.querySelectorAll('input').forEach(input => {
   input.addEventListener('keydown', e => {
@@ -233,9 +239,6 @@ document.querySelectorAll('input').forEach(input => {
       }
     }
   });
-  if (input.id.includes('date')) {
-    input.addEventListener('blur', () => validateDateField(input));
-  }
 });
 
 document.getElementById('price').addEventListener('input', updateRMPrice);
