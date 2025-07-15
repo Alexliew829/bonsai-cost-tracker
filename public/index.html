@@ -61,9 +61,6 @@
       -webkit-appearance: none;
       margin: 0;
     }
-    input[type=date]:invalid {
-      border-color: initial;
-    }
     .full {
       grid-column: 1 / -1;
     }
@@ -95,7 +92,8 @@
     <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
   </div>
   <form id="bonsaiForm">
-    <!-- ... [内容省略，保持不变] ... -->
+    <label>测试字段</label>
+    <input type="text" name="test" placeholder="请输入..." />
   </form>
   <div class="center-btn">
     <button type="button" onclick="saveToStorage()">📂 手动储存全部资料</button>
@@ -113,10 +111,10 @@ function updateRMPrice() {
     VND: 0.00018,
     IDR: 0.00028
   };
-  const currency = document.getElementById('currency').value;
-  const price = parseFloat(document.getElementById('price').value.replace(/,/g, ''));
+  const currency = document.getElementById('currency')?.value;
+  const price = parseFloat(document.getElementById('price')?.value.replace(/,/g, ''));
   const rm = rateMap[currency] && !isNaN(price) ? price * rateMap[currency] : '';
-  document.getElementById('price_rm').value = formatCurrency(rm);
+  if (document.getElementById('price_rm')) document.getElementById('price_rm').value = formatCurrency(rm);
 }
 
 function formatAllCurrencyInputs() {
@@ -146,18 +144,13 @@ function validateDate(input) {
   }
 }
 
-document.getElementById('price').addEventListener('input', () => {
-  updateRMPrice();
-});
-document.getElementById('currency').addEventListener('change', () => {
-  updateRMPrice();
-});
 document.querySelectorAll('input[type="text"], input[type="url"], input[type="number"], input[type="date"]').forEach(input => {
   input.addEventListener('blur', formatAllCurrencyInputs);
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
-      if (input.type === 'date' && input.validationMessage) {
+      if (input.validationMessage) {
         e.preventDefault();
+        input.reportValidity();
         return;
       }
       e.preventDefault();
