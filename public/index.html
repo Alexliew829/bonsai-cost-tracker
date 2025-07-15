@@ -85,6 +85,10 @@
     .row3 > * {
       flex: 1;
     }
+    .entry {
+      font-size: 16px;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -139,11 +143,7 @@
     <label>花盆</label><label>原成本</label>
     <input id="pot" /><input id="base_cost" disabled />
 
-    <label>20% 利润售价</label><label>30% 利润售价</label>
-    <input id="price_20" disabled /><input id="price_30" disabled />
-
-    <label>40% 利润售价</label><label>50% 利润售价</label>
-    <input id="price_40" disabled /><input id="price_50" disabled />
+    <div id="priceSummary" class="full"></div>
   </form>
 
   <div class="center-btn">
@@ -163,8 +163,27 @@ function updateRM() {
   const raw = parseFloat(document.getElementById('price').value.replace(/,/g, ''));
   const rate = rateMap[cur] || 0;
   const rm = raw * rate;
-  if (!isNaN(raw)) document.getElementById('price').value = formatCurrency(raw);
+  if (!isNaN(raw)) document.getElementById('price').value = raw;
   document.getElementById('price_rm').value = formatCurrency(rm);
+  updateSalesPrices(rm);
+}
+
+function updateSalesPrices(rmCost) {
+  const prices = {
+    "20%": rmCost * 1.26 * 1.12,
+    "30%": rmCost * 1.43 * 1.12,
+    "40%": rmCost * 1.67 * 1.12,
+    "45%": rmCost * 1.82 * 1.12,
+    "50%": rmCost * 2.00 * 1.12,
+    "55%": rmCost * 2.23 * 1.12
+  };
+  let html = `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>`;
+  html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>`;
+  html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>`;
+  html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>`;
+  html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>`;
+  html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>`;
+  document.getElementById('priceSummary').innerHTML = html;
 }
 
 function validateDate(input) {
@@ -192,6 +211,7 @@ function validateDate(input) {
   }
 }
 
+// ➤ 回车跳格 + 日期验证 + 金额格式化
 const fields = Array.from(document.querySelectorAll('input, select, textarea'));
 fields.forEach((el, i) => {
   el.addEventListener('keydown', e => {
