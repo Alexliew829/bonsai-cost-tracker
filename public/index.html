@@ -156,11 +156,13 @@ function updateRM() {
   const cur = document.getElementById('currency').value;
   const raw = parseFloat(document.getElementById('price').value.replace(/,/g, ''));
   const rate = rateMap[cur] || 0;
-  document.getElementById('price_rm').value = formatCurrency(raw * rate);
+  const rm = raw * rate;
+  document.getElementById('price_rm').value = formatCurrency(rm);
+  document.getElementById('price').value = formatCurrency(raw);
 }
 
 function validateDate(input) {
-  const raw = input.value.replace(/\D/g, '');
+  const raw = input.value.replace(/[^0-9]/g, '');
   if (!input.value) {
     const now = new Date();
     const dd = String(now.getDate()).padStart(2, '0');
@@ -171,7 +173,9 @@ function validateDate(input) {
     input.value = raw.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
   }
 
-  const valid = /^\d{2}\/\d{2}\/\d{2}$/.test(input.value);
+  const [d, m, y] = input.value.split('/').map(Number);
+  const valid = d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 0 && y <= 99;
+
   if (!valid) {
     input.classList.add('error');
     input.setCustomValidity('请输入有效日期');
@@ -183,16 +187,16 @@ function validateDate(input) {
 }
 
 // ➤ 回车跳格
-document.querySelectorAll('input, select, textarea').forEach((el, i, arr) => {
+const fields = Array.from(document.querySelectorAll('input, select, textarea'));
+fields.forEach((el, i) => {
   el.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (el.classList.contains('date-input')) validateDate(el);
       if (el.validationMessage) return el.reportValidity();
-
       let next = i + 1;
-      while (next < arr.length && (arr[next].disabled || arr[next].type === 'hidden')) next++;
-      if (arr[next]) arr[next].focus();
+      while (next < fields.length && (fields[next].disabled || fields[next].type === 'hidden')) next++;
+      if (fields[next]) fields[next].focus();
     }
   });
   if (el.classList.contains('date-input')) {
