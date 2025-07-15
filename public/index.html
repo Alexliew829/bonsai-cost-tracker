@@ -51,6 +51,11 @@
       font-size: 14px;
       box-sizing: border-box;
     }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
     .full {
       grid-column: 1 / -1;
     }
@@ -90,7 +95,7 @@
     <label>供应商</label><input id="supplier" required />
     <label>品种</label><input id="variety" required />
 
-    <label>币值 + 单价（原币）+ RM</label>
+    <label>币值 + 单价（原币）+ 单价（RM）</label>
     <div class="row3">
       <select id="currency">
         <option value="CNY">CNY</option>
@@ -102,10 +107,10 @@
       <input id="price_rm" disabled />
     </div>
 
-    <label>数量（棵）</label><input id="quantity" type="number" step="1" required />
+    <label>数量（棵）</label><input id="quantity" type="number" inputmode="numeric" pattern="\\d*" required />
     <label>图片网址（URL）</label><input id="image_url" type="url" class="url-link" onclick="if(this.value.startsWith('http')) window.open(this.value, '_blank')" />
     <label>发货单号</label><input id="shipment_id" />
-    <label>这次发货总数（棵）</label><input id="total_plants" type="number" step="1" required />
+    <label>这次发货总数（棵）</label><input id="total_plants" type="number" inputmode="numeric" pattern="\\d*" required />
     <label>这次发货总金额（RM）</label><input id="total_amount" type="text" required />
     <label>包装明细</label><input id="packing" />
     <label class="full">抵达仓库日期</label><input id="warehouse_date" type="text" placeholder="dd/mm/yyyy" maxlength="10" required />
@@ -134,7 +139,15 @@
     <button type="button" onclick="saveToStorage()">📂 手动储存全部资料</button>
   </div>
 <script>
-// ✅ 新增：货币格式化
+function convertToRM() {
+  const rates = { CNY: 1.55, NTD: 1/0.15, VND: 1/0.00018, IDR: 1/0.00028 };
+  const cur = document.getElementById('currency').value;
+  const val = parseFloat(document.getElementById('price').value.replace(/,/g, ''));
+  const rate = rates[cur];
+  const result = (!isNaN(val) && rate) ? val / rate : '';
+  document.getElementById('price_rm').value = isNaN(result) ? '' : result.toLocaleString('en-MY', {minimumFractionDigits:2});
+}
+
 function formatCurrencyField(el) {
   const raw = el.value.replace(/,/g, '');
   if (!/^\d+(\.\d{1,2})?$/.test(raw)) {
@@ -145,24 +158,49 @@ function formatCurrencyField(el) {
   }
 }
 
-// ✅ 支持 Enter 跳格
-const allInputs = document.querySelectorAll('input, select');
-allInputs.forEach((el, i) => {
+function saveToStorage() {
+  const data = {};
+  document.querySelectorAll('#bonsaiForm input, #bonsaiForm select').forEach(el => data[el.id] = el.value);
+  localStorage.setItem('bonsai_form_data', JSON.stringify(data));
+  alert('✅ 资料已储存');
+}
+
+function loadFromStorage() {
+  const saved = JSON.parse(localStorage.getItem('bonsai_form_data') || '{}');
+  Object.entries(saved).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  });
+  convertToRM();
+}
+
+document.getElementById('currency').addEventListener('change', convertToRM);
+document.getElementById('price').addEventListener('input', () => {
+  formatCurrencyField(document.getElementById('price'));
+  convertToRM();
+});
+document.querySelectorAll('input[type=text]').forEach(el => {
+  el.addEventListener('blur', () => {
+    if (el.id !== 'price_rm' && el.id !== 'image_url') formatCurrencyField(el);
+  });
+});
+document.querySelectorAll('input, select').forEach((el, i, arr) => {
   el.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const next = allInputs[i + 1];
+      const next = arr[i + 1];
       if (next) next.focus();
     }
   });
 });
-
-// ✅ 自动格式化金额输入框
-allInputs.forEach(el => {
-  if (el.type === 'text' && !el.disabled && !el.id.includes('date') && !el.id.includes('url')) {
-    el.addEventListener('blur', () => formatCurrencyField(el));
-  }
+document.getElementById('image_url').addEventListener('input', function () {
+  this.style.color = this.value.startsWith('http') ? 'blue' : '';
+  this.style.textDecoration = this.value.startsWith('http') ? 'underline' : '';
+  this.style.cursor = this.value.startsWith('http') ? 'pointer' : '';
 });
+
+loadFromStorage();
+setInterval(saveToStorage, 5 * 60 * 1000);
 </script>
 </body>
 </html>
