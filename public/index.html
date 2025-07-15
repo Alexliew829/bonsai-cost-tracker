@@ -1,121 +1,119 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>盆栽成本记录系统 Lover Legend gardening</title>
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>盆栽成本记录系统</title>
   <style>
     body {
       font-family: sans-serif;
       padding: 15px;
       background-color: #f9f9f9;
-      max-width: 1100px;
+      max-width: 1000px;
       margin: auto;
     }
     h1 {
       text-align: center;
-      font-size: 26px;
+      font-size: 28px;
     }
-    .section-title {
+    h2 {
+      text-align: center;
       font-size: 18px;
-      font-weight: bold;
-      margin: 20px 0 10px;
-      display: flex;
-      align-items: center;
     }
-    .section-title img {
-      height: 22px;
-      margin-right: 6px;
-    }
-    form {
+    .form-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 15px 20px;
+      gap: 15px;
     }
     label {
       display: block;
       font-weight: bold;
-      font-size: 14px;
+      margin-top: 10px;
       margin-bottom: 5px;
     }
-    textarea, input[type="text"], input[type="number"], select {
+    input[type="text"], input[type="number"], select, textarea {
       width: 100%;
       padding: 6px;
-      font-size: 15px;
+      font-size: 14px;
       box-sizing: border-box;
-      resize: vertical;
-      height: auto;
     }
-    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-inner-spin-button, 
     input[type="number"]::-webkit-outer-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
-    .full-width {
-      grid-column: span 2;
+    textarea {
+      resize: vertical;
+      height: 55px;
     }
-    .readonly-input {
-      background: #f0f0f0;
+    input[readonly] {
+      background-color: #eee;
+    }
+    .logo {
+      display: block;
+      margin: auto;
+      max-height: 60px;
     }
   </style>
 </head>
 <body>
-  <h1>盆栽成本记录系统 Lover Legend gardening</h1>
-  <div class="section-title"><img src="icon.png" alt="icon"/>盆栽资料（含内陆发货信息）</div>
+  <img src="favicon.png" alt="logo" class="logo" />
+  <h1>盆栽成本记录系统 <span style="font-weight: normal">Lover Legend gardening</span></h1>
+  <h2>🌱 盆栽资料（含内陆发货信息）</h2>
+
   <form>
-    <div>
-      <label for="supplier">供应商</label>
-      <textarea id="supplier" rows="2"></textarea>
-    </div>
-    <div>
-      <label for="species">品种</label>
-      <textarea id="species" rows="2"></textarea>
-    </div>
+    <div class="form-container">
+      <div>
+        <label>供应商</label>
+        <textarea name="supplier" tabindex="1"></textarea>
+      </div>
+      <div>
+        <label>品种</label>
+        <textarea name="species" tabindex="2"></textarea>
+      </div>
 
-    <div>
-      <label for="price">单价（原币）</label>
-      <input type="text" id="price" />
-    </div>
-    <div>
-      <label for="currency">币值</label>
-      <select id="currency">
-        <option>CNY</option>
-        <option>VND</option>
-        <option>IDR</option>
-        <option>NTD</option>
-      </select>
-    </div>
+      <div>
+        <label>单价（原币）</label>
+        <input type="text" name="unitPrice" tabindex="3">
+      </div>
+      <div>
+        <label>币值</label>
+        <select name="currency" tabindex="4">
+          <option value="CNY">CNY</option>
+          <option value="VND">VND</option>
+          <option value="NTD">NTD</option>
+          <option value="IDR">IDR</option>
+        </select>
+      </div>
 
-    <div>
-      <label for="quantity">数量（棵）</label>
-      <input type="number" id="quantity" min="1" />
-    </div>
-    <div>
-      <label for="image">图片网址（URL）</label>
-      <input type="text" id="image" placeholder="https://example.com/photo.jpg" />
-    </div>
+      <div>
+        <label>数量（棵）</label>
+        <input type="number" name="quantity" min="0" step="1" tabindex="5">
+      </div>
+      <div>
+        <label>图片网址（URL）</label>
+        <input type="text" name="imageUrl" placeholder="https://example.com/photo.jpg" tabindex="6">
+      </div>
 
-    <div>
-      <label for="invoice">发货单号</label>
-      <input type="text" id="invoice" />
-    </div>
-    <div>
-      <label for="totalQty">这次发货总数（棵）</label>
-      <input type="text" id="totalQty" class="readonly-input" readonly />
-    </div>
+      <div>
+        <label>发货单号</label>
+        <input type="text" name="invoiceId" tabindex="7">
+      </div>
+      <div>
+        <label>这次发货总数（棵）</label>
+        <input type="text" name="totalQty" tabindex="8" readonly>
+      </div>
 
-    <div class="full-width">
-      <label for="totalCost">这次发货总金额（RM）</label>
-      <input type="text" id="totalCost" class="readonly-input" readonly />
-    </div>
+      <div style="grid-column: span 2;">
+        <label>这次发货总金额（RM）</label>
+        <input type="text" name="totalAmount" readonly>
+      </div>
 
-    <div class="full-width">
-      <label for="packing">包装明细</label>
-      <textarea id="packing" rows="2"></textarea>
+      <div style="grid-column: span 2;">
+        <label>包装明细</label>
+        <textarea name="packaging" tabindex="9"></textarea>
+      </div>
     </div>
-
-    <!-- 发货资料请另起部分再呈现 -->
   </form>
 </body>
 </html>
