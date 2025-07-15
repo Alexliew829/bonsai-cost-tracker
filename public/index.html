@@ -92,7 +92,7 @@
     <img src="logo.png" alt="logo">
     <h1>盆栽成本记录系统 Lover Legend gardening</h1>
   </div>
-  <form id="bonsaiForm" onkeydown="return event.key !== 'Enter';">
+  <form id="bonsaiForm">
     <h2>🌱 盆栽资料（含内陆发货信息）</h2>
     <label>供应商</label>
     <label>品种</label>
@@ -201,14 +201,22 @@ function formatAllCurrencyInputs() {
 
 function validateDate(input) {
   const val = input.value.replace(/\D/g, '');
-  if (val.length === 6) {
-    const formatted = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`;
-    input.value = formatted;
+  if (val.length === 6 || val.length === 8) {
+    const day = val.slice(0, 2);
+    const month = val.slice(2, 4);
+    const year = val.slice(4);
+    if (val.length === 6) {
+      input.value = `${day}/${month}/${year}`;
+    } else {
+      input.value = `${day}/${month}/${year.slice(-2)}`;
+    }
     input.classList.remove('error');
   } else if (val.length > 0) {
     input.classList.add('error');
+    input.title = '请输入有效日期';
   } else {
     input.classList.remove('error');
+    input.title = '';
   }
 }
 
@@ -220,6 +228,14 @@ document.getElementById('currency').addEventListener('change', () => {
 });
 document.querySelectorAll('input[type="text"]').forEach(input => {
   input.addEventListener('blur', formatAllCurrencyInputs);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = e.target.form;
+      const index = Array.prototype.indexOf.call(form, e.target);
+      form.elements[index + 1]?.focus();
+    }
+  });
 });
 </script>
 </body>
