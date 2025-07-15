@@ -106,7 +106,7 @@
         <option value="NTD">NTD</option>
         <option value="IDR">IDR</option>
       </select>
-      <input id="price" type="text" />
+      <input id="price" type="text" inputmode="decimal" />
       <input id="price_rm" disabled />
     </div>
     <input id="quantity" type="text" />
@@ -138,6 +138,12 @@
 
     <label>花盆</label><label>原成本</label>
     <input id="pot" /><input id="base_cost" disabled />
+
+    <label>20% 利润售价</label><label>30% 利润售价</label>
+    <input id="price_20" disabled /><input id="price_30" disabled />
+
+    <label>40% 利润售价</label><label>50% 利润售价</label>
+    <input id="price_40" disabled /><input id="price_50" disabled />
   </form>
 
   <div class="center-btn">
@@ -157,8 +163,8 @@ function updateRM() {
   const raw = parseFloat(document.getElementById('price').value.replace(/,/g, ''));
   const rate = rateMap[cur] || 0;
   const rm = raw * rate;
+  if (!isNaN(raw)) document.getElementById('price').value = formatCurrency(raw);
   document.getElementById('price_rm').value = formatCurrency(rm);
-  document.getElementById('price').value = formatCurrency(raw);
 }
 
 function validateDate(input) {
@@ -186,7 +192,6 @@ function validateDate(input) {
   }
 }
 
-// ➤ 回车跳格
 const fields = Array.from(document.querySelectorAll('input, select, textarea'));
 fields.forEach((el, i) => {
   el.addEventListener('keydown', e => {
@@ -194,6 +199,9 @@ fields.forEach((el, i) => {
       e.preventDefault();
       if (el.classList.contains('date-input')) validateDate(el);
       if (el.validationMessage) return el.reportValidity();
+      if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price')) {
+        el.value = formatCurrency(el.value);
+      }
       let next = i + 1;
       while (next < fields.length && (fields[next].disabled || fields[next].type === 'hidden')) next++;
       if (fields[next]) fields[next].focus();
@@ -201,6 +209,11 @@ fields.forEach((el, i) => {
   });
   if (el.classList.contains('date-input')) {
     el.addEventListener('blur', () => validateDate(el));
+  }
+  if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price')) {
+    el.addEventListener('blur', () => {
+      el.value = formatCurrency(el.value);
+    });
   }
 });
 
