@@ -86,14 +86,86 @@
 <body>
   <div class="header">
     <img src="logo.png" alt="logo">
-    <h1>盆栽成本记录系统 Lover Legend gardening</h1>
+    <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
   </div>
   <form id="bonsaiForm">
-    <!-- 表单内容保留不变 -->
+    <label>供应商</label>
+    <input type="text" name="supplier">
+
+    <label>品种</label>
+    <input type="text" name="type">
+
+    <label>币值</label>
+    <select id="currency">
+      <option value="CNY">CNY</option>
+      <option value="NTD">NTD</option>
+      <option value="VND">VND</option>
+      <option value="IDR">IDR</option>
+    </select>
+
+    <label>单价（原币）</label>
+    <input id="price" name="price" type="text">
+
+    <label>单价（RM）</label>
+    <input id="price_rm" name="price_rm" type="text" readonly>
+
+    <label>数量（棵）</label>
+    <input type="number" name="quantity" min="0">
+
+    <label>发货单号</label>
+    <input type="text" name="delivery_no">
+
+    <label>图片网址（URL）</label>
+    <input type="text" name="img_url">
+
+    <label>这次发货总数（棵）</label>
+    <input type="number" name="batch_total" min="0">
+
+    <label>这次发货总金额（RM）</label>
+    <input id="total_amount" type="text" name="total_rm">
+
+    <label>包装明细</label>
+    <input type="text" name="packing">
+
+    <label>抵达仓库日期</label>
+    <input type="text" id="warehouse_date" name="warehouse_date">
+
+    <h2>🚚 发货资料</h2>
+
+    <label>装柜日期</label>
+    <input type="text" id="container_date" name="container_date">
+
+    <label>海运单号</label>
+    <input type="text" name="shipment_no">
+
+    <label>抵达大马日期</label>
+    <input type="text" id="arrival_date" name="arrival_date">
+
+    <label>到大马运费（RM）</label>
+    <input id="freight_fee" type="text" name="freight_fee">
+
+    <label>运输天数（自动）</label>
+    <input type="text" name="days" readonly>
+
+    <label>运费比例（自动）</label>
+    <input type="text" name="rate" readonly>
+
+    <h2>📓 成本与销售细节</h2>
+
+    <label>花盆成本 RM</label>
+    <input id="pot" type="text" name="pot">
+
+    <label>苔藓成本 RM</label>
+    <input id="moss" type="text" name="moss">
+
+    <label>本地运输 RM</label>
+    <input id="local" type="text" name="local">
   </form>
+
   <div class="center-btn">
     <button type="button" onclick="saveToStorage()">📂 手动储存全部资料</button>
   </div>
+
 <script>
 function formatCurrency(value) {
   const num = parseFloat(value?.toString().replace(/,/g, ''));
@@ -118,11 +190,9 @@ function validateDateField(input) {
   }
   const valid = /^\d{2}\/\d{2}\/\d{2}$/.test(input.value);
   if (!valid) {
-    input.classList.add('invalid');
     input.setCustomValidity('请输入有效日期');
     input.reportValidity();
   } else {
-    input.classList.remove('invalid');
     input.setCustomValidity('');
   }
 }
