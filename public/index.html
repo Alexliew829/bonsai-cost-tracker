@@ -54,7 +54,7 @@
     textarea {
       white-space: pre-wrap;
       overflow-wrap: break-word;
-      resize: vertical;
+      resize: none;
     }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
@@ -128,7 +128,7 @@
 
     <label>包装明细</label>
     <label>抵达仓库日期</label>
-    <textarea id="packing"></textarea>
+    <input id="packing" />
     <input id="warehouse_date" type="text" placeholder="06/07/2025" maxlength="10" required oninput="validateDate(this)" />
 
     <h2>🚛 发货资料</h2>
@@ -230,14 +230,19 @@ document.getElementById('price').addEventListener('input', () => {
 document.getElementById('currency').addEventListener('change', () => {
   updateRMPrice();
 });
-document.querySelectorAll('input[type="text"]').forEach(input => {
+document.querySelectorAll('input[type="text"], input[type="url"]').forEach(input => {
   input.addEventListener('blur', formatAllCurrencyInputs);
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const form = e.target.form;
-      const index = Array.prototype.indexOf.call(form, e.target);
-      form.elements[index + 1]?.focus();
+      const index = Array.prototype.indexOf.call(form.elements, e.target);
+      for (let i = index + 1; i < form.elements.length; i++) {
+        if (form.elements[i].tagName === 'INPUT' || form.elements[i].tagName === 'TEXTAREA' || form.elements[i].tagName === 'SELECT') {
+          form.elements[i].focus();
+          break;
+        }
+      }
     }
   });
 });
