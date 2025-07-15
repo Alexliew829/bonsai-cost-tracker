@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>盆栽成本记录系统 Lover Legend gardening</title>
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -10,120 +10,112 @@
       font-family: sans-serif;
       padding: 15px;
       background-color: #f9f9f9;
-      max-width: 800px;
+      max-width: 1100px;
       margin: auto;
     }
-    h2::after {
-      content: " - Lover Legend Gardening";
-      font-size: 14px;
-      font-weight: normal;
-      display: block;
-      color: #666;
-    }
-    label {
-      font-weight: bold;
-      font-size: 15px;
-      display: block;
-      margin-top: 10px;
-    }
-    textarea, input, select {
-      width: 100%;
-      padding: 8px;
-      margin: 4px 0;
-      box-sizing: border-box;
-      font-size: 16px;
-      font-family: inherit;
-    }
-    textarea {
-      resize: vertical;
-      min-height: 40px;
-      line-height: 1.5;
-    }
-    .logo {
-      display: block;
-      max-width: 100px;
-      margin: 10px auto;
-    }
-    .title {
+    h1 {
       text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 10px;
+      font-size: 26px;
     }
     .section-title {
       font-size: 18px;
       font-weight: bold;
       margin: 20px 0 10px;
+      display: flex;
+      align-items: center;
     }
-    .currency {
-      text-align: right;
+    .section-title img {
+      height: 22px;
+      margin-right: 6px;
+    }
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px 20px;
+    }
+    label {
+      display: block;
       font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+    textarea, input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 6px;
+      font-size: 15px;
+      box-sizing: border-box;
+      resize: vertical;
+      height: auto;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .full-width {
+      grid-column: span 2;
+    }
+    .readonly-input {
+      background: #f0f0f0;
     }
   </style>
 </head>
 <body>
-  <img src="/logo.png" alt="logo" class="logo">
-  <div class="title">盆栽成本记录系统 Lover Legend gardening</div>
+  <h1>盆栽成本记录系统 Lover Legend gardening</h1>
+  <div class="section-title"><img src="icon.png" alt="icon"/>盆栽资料（含内陆发货信息）</div>
+  <form>
+    <div>
+      <label for="supplier">供应商</label>
+      <textarea id="supplier" rows="2"></textarea>
+    </div>
+    <div>
+      <label for="species">品种</label>
+      <textarea id="species" rows="2"></textarea>
+    </div>
 
-  <div class="section-title">🌱 盆栽资料（含内陆发货信息）</div>
+    <div>
+      <label for="price">单价（原币）</label>
+      <input type="text" id="price" />
+    </div>
+    <div>
+      <label for="currency">币值</label>
+      <select id="currency">
+        <option>CNY</option>
+        <option>VND</option>
+        <option>IDR</option>
+        <option>NTD</option>
+      </select>
+    </div>
 
-  <label>供应商</label>
-  <textarea name="supplier" rows="1"></textarea>
+    <div>
+      <label for="quantity">数量（棵）</label>
+      <input type="number" id="quantity" min="1" />
+    </div>
+    <div>
+      <label for="image">图片网址（URL）</label>
+      <input type="text" id="image" placeholder="https://example.com/photo.jpg" />
+    </div>
 
-  <label>品种</label>
-  <textarea name="type" rows="1"></textarea>
+    <div>
+      <label for="invoice">发货单号</label>
+      <input type="text" id="invoice" />
+    </div>
+    <div>
+      <label for="totalQty">这次发货总数（棵）</label>
+      <input type="text" id="totalQty" class="readonly-input" readonly />
+    </div>
 
-  <label>单价（原币）</label>
-  <textarea name="unit_price" rows="1"></textarea>
+    <div class="full-width">
+      <label for="totalCost">这次发货总金额（RM）</label>
+      <input type="text" id="totalCost" class="readonly-input" readonly />
+    </div>
 
-  <label>币值</label>
-  <select name="currency">
-    <option value="CNY">CNY</option>
-    <option value="VND">VND</option>
-    <option value="NTD">NTD</option>
-    <option value="IDR">IDR</option>
-  </select>
+    <div class="full-width">
+      <label for="packing">包装明细</label>
+      <textarea id="packing" rows="2"></textarea>
+    </div>
 
-  <label>数量（棵）</label>
-  <textarea name="quantity" rows="1"></textarea>
-
-  <label>图片网址（URL）</label>
-  <textarea name="image_url" rows="1"></textarea>
-
-  <label>发货单号</label>
-  <textarea name="shipment_no" rows="1"></textarea>
-
-  <label>这次发货总数（棵）</label>
-  <textarea name="total_count" rows="1" readonly></textarea>
-
-  <label>这次发货总金额（RM）</label>
-  <textarea name="total_price" rows="1" readonly></textarea>
-
-  <label>包装明细</label>
-  <textarea name="package_detail" rows="2"></textarea>
-
-  <label>抵达仓库日期</label>
-  <textarea name="warehouse_date" rows="1"></textarea>
-
-  <div class="section-title">📦 发货资料</div>
-
-  <label>装柜日期</label>
-  <textarea name="container_date" rows="1"></textarea>
-
-  <label>海运单号</label>
-  <textarea name="freight_no" rows="1"></textarea>
-
-  <label>到大马运费（RM）</label>
-  <textarea name="freight_cost" rows="1"></textarea>
-
-  <label>抵达大马日期</label>
-  <textarea name="arrival_date" rows="1"></textarea>
-
-  <label>运输天数（自动）</label>
-  <textarea name="days" rows="1" readonly></textarea>
-
-  <label>运费比例（自动）</label>
-  <textarea name="rate" rows="1" readonly></textarea>
-
+    <!-- 发货资料请另起部分再呈现 -->
+  </form>
 </body>
 </html>
