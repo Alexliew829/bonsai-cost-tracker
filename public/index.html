@@ -198,8 +198,14 @@ function validateDateField(input) {
     const day = val.slice(0, 2);
     const month = val.slice(2, 4);
     const year = val.slice(4);
-    input.value = `${day}/${month}/${year}`;
-    input.setCustomValidity('');
+    const isValidDate = !isNaN(new Date(`20${year}-${month}-${day}`).getTime());
+    if (isValidDate) {
+      input.value = `${day}/${month}/${year}`;
+      input.setCustomValidity('');
+    } else {
+      input.setCustomValidity('请输入有效日期');
+      input.reportValidity();
+    }
   } else {
     input.setCustomValidity('请输入有效日期');
     input.reportValidity();
@@ -228,6 +234,11 @@ document.querySelectorAll('input').forEach(input => {
   });
   if (input.id.includes('date')) {
     input.addEventListener('blur', () => validateDateField(input));
+  }
+  if (['price','freight_fee','total_amount','moss','pot','local'].includes(input.id)) {
+    input.addEventListener('blur', () => {
+      input.value = formatCurrency(input.value);
+    });
   }
 });
 
