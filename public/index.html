@@ -93,7 +93,6 @@
   </div>
   <form id="bonsaiForm">
     <h2>🌱 盆栽资料（含内陆发货信息）</h2>
-
     <label>供应商</label>
     <label>品种</label>
     <input id="supplier" required />
@@ -102,13 +101,13 @@
     <label>币值 + 单价（原币）+ 单价（RM）</label>
     <label>数量（棵）</label>
     <div class="row3">
-      <select id="currency" onchange="convertPrice()">
+      <select id="currency">
         <option value="CNY">CNY</option>
         <option value="VND">VND</option>
         <option value="NTD">NTD</option>
         <option value="IDR">IDR</option>
       </select>
-      <input id="price" type="text" required inputmode="decimal" pattern="\d*" oninput="convertPrice()" />
+      <input id="price" type="text" required inputmode="decimal" />
       <input id="price_rm" disabled />
     </div>
     <input id="quantity" type="text" inputmode="numeric" pattern="\d*" required />
@@ -120,8 +119,8 @@
 
     <label>这次发货总数（棵）</label>
     <label>这次发货总金额（RM）</label>
-    <input id="total_plants" type="text" inputmode="numeric" pattern="\d*" required oninput="formatCurrency(this)" />
-    <input id="total_amount" type="text" required oninput="formatCurrency(this)" />
+    <input id="total_plants" type="text" inputmode="numeric" required />
+    <input id="total_amount" type="text" required />
 
     <label>包装明细</label>
     <label>抵达仓库日期</label>
@@ -136,7 +135,7 @@
 
     <label>到大马运费（RM）</label>
     <label>抵达大马日期</label>
-    <input id="freight_fee" type="text" oninput="formatCurrency(this)" />
+    <input id="freight_fee" type="text" />
     <input id="arrival_date" type="text" placeholder="06/07/2025" />
 
     <label>运输天数（自动）</label>
@@ -147,12 +146,12 @@
     <h2>🧾 成本与销售细节</h2>
     <label>苔藓成本 RM</label>
     <label>花盆成本 RM</label>
-    <input id="moss" type="text" oninput="formatCurrency(this)" />
-    <input id="pot" type="text" oninput="formatCurrency(this)" />
+    <input id="moss" type="text" />
+    <input id="pot" type="text" />
 
     <label>本地运输 RM</label>
     <label>原成本（自动）</label>
-    <input id="local" type="text" oninput="formatCurrency(this)" />
+    <input id="local" type="text" />
     <input id="base_cost" disabled />
 
     <label>总成本（自动）</label>
@@ -174,27 +173,40 @@
     <button type="button" onclick="saveToStorage()">📂 手动储存全部资料</button>
   </div>
 <script>
-  function convertPrice() {
-    const rateMap = {
-      CNY: 1.55,
-      NTD: 1 / 0.15,
-      VND: 1 / 0.00018,
-      IDR: 1 / 0.00028,
-    };
-    const currency = document.getElementById('currency').value;
-    const price = parseFloat(document.getElementById('price').value.replace(/,/g, '')) || 0;
-    const rm = price * rateMap[currency];
-    document.getElementById('price_rm').value = formatNumber(rm);
-  }
+function formatCurrency(value) {
+  const num = parseFloat(value);
+  return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
-  function formatCurrency(input) {
-    const value = parseFloat(input.value.replace(/,/g, ''));
-    if (!isNaN(value)) input.value = formatNumber(value);
-  }
+function updateRMPrice() {
+  const rateMap = {
+    CNY: 1 / 1.55,
+    NTD: 1 / 0.15,
+    VND: 1 / 0.00018,
+    IDR: 1 / 0.00028
+  };
+  const currency = document.getElementById('currency').value;
+  const price = parseFloat(document.getElementById('price').value);
+  const rm = rateMap[currency] && !isNaN(price) ? price * rateMap[currency] : '';
+  document.getElementById('price_rm').value = formatCurrency(rm);
+}
 
-  function formatNumber(num) {
-    return num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
+function formatAllCurrencyInputs() {
+  ['price', 'freight_fee', 'total_amount', 'moss', 'pot', 'local'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.value) el.value = formatCurrency(el.value);
+  });
+}
+
+document.getElementById('price').addEventListener('input', () => {
+  updateRMPrice();
+});
+document.getElementById('currency').addEventListener('change', () => {
+  updateRMPrice();
+});
+document.querySelectorAll('input[type="text"]').forEach(input => {
+  input.addEventListener('blur', formatAllCurrencyInputs);
+});
 </script>
 </body>
 </html>
