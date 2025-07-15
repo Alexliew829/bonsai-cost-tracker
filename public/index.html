@@ -25,6 +25,12 @@
       font-size: 24px;
       margin: 0;
     }
+    h2 {
+      font-size: 18px;
+      text-align: center;
+      margin: 5px 0 15px;
+      grid-column: 1 / -1;
+    }
     form {
       background: #fff;
       padding: 20px;
@@ -44,11 +50,8 @@
       padding: 6px 8px;
       font-size: 14px;
       box-sizing: border-box;
-    }
-    textarea {
       white-space: pre-wrap;
-      overflow-wrap: break-word;
-      resize: none;
+      overflow: hidden;
     }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
@@ -62,6 +65,19 @@
       text-align: center;
       margin-top: 20px;
     }
+    .highlight {
+      color: red;
+      font-weight: bold;
+    }
+    .error {
+      border: 2px solid red !important;
+      background-color: #ffe6e6 !important;
+    }
+    .url-link {
+      color: blue;
+      text-decoration: underline;
+      cursor: pointer;
+    }
     .row3 {
       display: flex;
       gap: 6px;
@@ -74,80 +90,85 @@
 <body>
   <div class="header">
     <img src="logo.png" alt="logo">
-    <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
+    <h1>盆栽成本记录系统 Lover Legend gardening</h1>
   </div>
   <form id="bonsaiForm">
+    <h2>🌱 盆栽资料（含内陆发货信息）</h2>
     <label>供应商</label>
-    <input type="text" name="supplier" placeholder="请输入供应商名称" required />
-
     <label>品种</label>
-    <input type="text" name="type" placeholder="请输入品种名称" required />
+    <input id="supplier" required />
+    <input id="variety" required />
 
-    <label>币值 / 单价 / RM</label>
+    <label>币值 + 单价（原币）+ 单价（RM）</label>
+    <label>数量（棵）</label>
     <div class="row3">
-      <select id="currency" onchange="updateRMPrice()">
+      <select id="currency">
         <option value="CNY">CNY</option>
-        <option value="NTD">NTD</option>
         <option value="VND">VND</option>
+        <option value="NTD">NTD</option>
         <option value="IDR">IDR</option>
       </select>
-      <input type="text" id="price" placeholder="单价" oninput="updateRMPrice()">
-      <input type="text" id="price_rm" placeholder="RM" readonly>
+      <input id="price" type="text" required inputmode="decimal" />
+      <input id="price_rm" disabled />
     </div>
+    <input id="quantity" type="text" inputmode="numeric" pattern="\d*" required />
 
-    <label>数量</label>
-    <input type="number" name="qty" min="0" />
-
-    <label>图片 URL</label>
-    <input type="url" name="image_url" placeholder="贴上图片网址 (Facebook 相簿)" />
-
+    <label>图片网址（URL）</label>
     <label>发货单号</label>
-    <input type="text" name="invoice" placeholder="请输入发货单号" />
+    <input id="image_url" type="url" class="url-link" onclick="if(this.value.startsWith('http')) window.open(this.value, '_blank')" />
+    <input id="shipment_id" />
 
-    <label>发货总棵数</label>
-    <input type="number" name="total_count" min="0" />
+    <label>这次发货总数（棵）</label>
+    <label>这次发货总金额（RM）</label>
+    <input id="total_plants" type="text" inputmode="numeric" required />
+    <input id="total_amount" type="text" required />
 
-    <label>这次发货总金额</label>
-    <input type="text" id="total_amount" placeholder="自动计算" readonly />
-
-    <label>包装备注</label>
-    <input type="text" name="pack_note" placeholder="纸箱/网套/托盘等" />
-
+    <label>包装明细</label>
     <label>抵达仓库日期</label>
-    <input type="text" name="arrive_warehouse" placeholder="DDMMYY 或 DDMMYYYY" onblur="validateDate(this)" />
+    <input id="packing" />
+    <input id="warehouse_date" type="text" placeholder="06/07/2025" maxlength="10" required />
 
+    <h2>🚛 发货资料</h2>
     <label>装柜日期</label>
-    <input type="text" name="ship_date" placeholder="DDMMYY 或 DDMMYYYY" onblur="validateDate(this)" />
-
     <label>海运单号</label>
-    <input type="text" name="shipping_id" placeholder="请输入运单号" />
+    <input id="container_date" type="text" placeholder="06/07/2025" />
+    <input id="shipping_no" />
 
-    <label>到马运费</label>
-    <input type="text" id="freight_fee" placeholder="请输入马币金额" />
-
+    <label>到大马运费（RM）</label>
     <label>抵达大马日期</label>
-    <input type="text" name="arrive_malaysia" placeholder="DDMMYY 或 DDMMYYYY" onblur="validateDate(this)" />
+    <input id="freight_fee" type="text" />
+    <input id="arrival_date" type="text" placeholder="06/07/2025" />
 
-    <label>运输天数</label>
-    <input type="number" name="shipping_days" min="0" />
+    <label>运输天数（自动）</label>
+    <label>运费比例（自动）</label>
+    <input id="days" disabled />
+    <input id="freight_ratio" disabled />
 
-    <label>运费分摊比例 (%)</label>
-    <input type="number" name="freight_ratio" min="0" max="100" />
+    <h2>🧾 成本与销售细节</h2>
+    <label>苔藓成本 RM</label>
+    <label>花盆成本 RM</label>
+    <input id="moss" type="text" />
+    <input id="pot" type="text" />
 
-    <label>花盆</label>
-    <input type="text" id="pot" placeholder="花盆成本" />
+    <label>本地运输 RM</label>
+    <label>原成本（自动）</label>
+    <input id="local" type="text" />
+    <input id="base_cost" disabled />
 
-    <label>苔藓</label>
-    <input type="text" id="moss" placeholder="苔藓成本" />
+    <label>总成本（自动）</label>
+    <label>销售价 20%</label>
+    <input id="total_cost" disabled />
+    <input id="price_20" disabled />
 
-    <label>本地运输</label>
-    <input type="text" id="local" placeholder="运输成本" />
+    <label>销售价 30%</label>
+    <label>销售价 40%</label>
+    <input id="price_30" disabled />
+    <input id="price_40" disabled />
 
-    <label>总成本</label>
-    <input type="text" id="total_cost" placeholder="自动计算" readonly />
-
-    <label>售价（20%~55%）</label>
-    <textarea id="price_summary" placeholder="自动生成售价..." rows="5" readonly></textarea>
+    <label class="highlight">销售价 50%</label>
+    <label>销售价 55%</label>
+    <input id="price_50" disabled />
+    <input id="price_55" disabled />
   </form>
   <div class="center-btn">
     <button type="button" onclick="saveToStorage()">📂 手动储存全部资料</button>
@@ -159,35 +180,33 @@ function formatCurrency(value) {
 }
 
 function updateRMPrice() {
-  const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
-  const currency = document.getElementById('currency')?.value;
-  const price = parseFloat(document.getElementById('price')?.value.replace(/,/g, ''));
+  const rateMap = {
+    CNY: 1 / 1.55,
+    NTD: 0.15,
+    VND: 0.00018,
+    IDR: 0.00028
+  };
+  const currency = document.getElementById('currency').value;
+  const price = parseFloat(document.getElementById('price').value.replace(/,/g, ''));
   const rm = rateMap[currency] && !isNaN(price) ? price * rateMap[currency] : '';
-  if (document.getElementById('price_rm')) document.getElementById('price_rm').value = formatCurrency(rm);
+  document.getElementById('price_rm').value = formatCurrency(rm);
 }
 
-function validateDate(input) {
+function validateDateField(input) {
   const val = input.value.replace(/\D/g, '');
-  if (val.length === 6 || val.length === 8) {
+  if (val.length === 6) {
     const day = val.slice(0, 2);
     const month = val.slice(2, 4);
     const year = val.slice(4);
-    if (val.length === 6) {
-      input.value = `${day}/${month}/${year}`;
-    } else {
-      input.value = `${day}/${month}/${year.slice(-2)}`;
-    }
+    input.value = `${day}/${month}/${year}`;
     input.setCustomValidity('');
-  } else if (val.length > 0) {
+  } else {
     input.setCustomValidity('请输入有效日期');
     input.reportValidity();
-  } else {
-    input.setCustomValidity('');
   }
 }
 
-document.querySelectorAll('input, textarea, select').forEach(input => {
-  input.addEventListener('blur', formatAllCurrencyInputs);
+document.querySelectorAll('input').forEach(input => {
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       if (input.validationMessage) {
@@ -207,14 +226,13 @@ document.querySelectorAll('input, textarea, select').forEach(input => {
       }
     }
   });
+  if (input.id.includes('date')) {
+    input.addEventListener('blur', () => validateDateField(input));
+  }
 });
 
-function formatAllCurrencyInputs() {
-  ['price', 'freight_fee', 'total_amount', 'moss', 'pot', 'local'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el && el.value) el.value = formatCurrency(el.value);
-  });
-}
+document.getElementById('price').addEventListener('input', updateRMPrice);
+document.getElementById('currency').addEventListener('change', updateRMPrice);
 </script>
 </body>
 </html>
