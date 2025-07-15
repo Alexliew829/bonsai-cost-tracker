@@ -118,9 +118,11 @@ function validateDateField(input) {
   }
   const valid = /^\d{2}\/\d{2}\/\d{2}$/.test(input.value);
   if (!valid) {
+    input.classList.add('invalid');
     input.setCustomValidity('请输入有效日期');
     input.reportValidity();
   } else {
+    input.classList.remove('invalid');
     input.setCustomValidity('');
   }
 }
@@ -140,7 +142,10 @@ function formatAllCurrencyInputs() {
 
 ['warehouse_date','container_date','arrival_date'].forEach(id => {
   const el = document.getElementById(id);
-  if (el) el.addEventListener('blur', () => validateDateField(el));
+  if (el) {
+    el.addEventListener('blur', () => validateDateField(el));
+    el.addEventListener('input', () => validateDateField(el));
+  }
 });
 
 document.querySelectorAll('input').forEach(input => {
