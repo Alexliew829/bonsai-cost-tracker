@@ -144,27 +144,33 @@ function validateDate(input) {
   }
 }
 
-document.querySelectorAll('input[type="text"], input[type="url"], input[type="number"], input[type="date"]').forEach(input => {
-  input.addEventListener('blur', formatAllCurrencyInputs);
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      if (input.validationMessage) {
+// 支持 Enter 跳格并阻止无效换行
+function setupFormNavigation() {
+  const form = document.getElementById('bonsaiForm');
+  const fields = Array.from(form.querySelectorAll('input, select, textarea'));
+  fields.forEach(input => {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        if (input.validationMessage) {
+          e.preventDefault();
+          input.reportValidity();
+          return;
+        }
         e.preventDefault();
-        input.reportValidity();
-        return;
-      }
-      e.preventDefault();
-      const form = e.target.form;
-      const index = Array.prototype.indexOf.call(form.elements, e.target);
-      for (let i = index + 1; i < form.elements.length; i++) {
-        const el = form.elements[i];
-        if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') && !el.disabled && el.type !== 'hidden') {
-          el.focus();
-          break;
+        const index = fields.indexOf(e.target);
+        for (let i = index + 1; i < fields.length; i++) {
+          if (!fields[i].disabled && fields[i].type !== 'hidden') {
+            fields[i].focus();
+            break;
+          }
         }
       }
-    }
+    });
   });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  setupFormNavigation();
 });
 </script>
 </body>
