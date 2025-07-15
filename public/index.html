@@ -25,12 +25,6 @@
       font-size: 24px;
       margin: 0;
     }
-    h2 {
-      font-size: 18px;
-      text-align: center;
-      margin: 5px 0 15px;
-      grid-column: 1 / -1;
-    }
     form {
       background: #fff;
       padding: 20px;
@@ -68,15 +62,6 @@
       text-align: center;
       margin-top: 20px;
     }
-    .highlight {
-      color: red;
-      font-weight: bold;
-    }
-    .url-link {
-      color: blue;
-      text-decoration: underline;
-      cursor: pointer;
-    }
     .row3 {
       display: flex;
       gap: 6px;
@@ -92,8 +77,77 @@
     <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
   </div>
   <form id="bonsaiForm">
-    <label>测试字段</label>
-    <input type="text" name="test" placeholder="请输入..." />
+    <label>供应商</label>
+    <input type="text" name="supplier" placeholder="请输入供应商名称" required />
+
+    <label>品种</label>
+    <input type="text" name="type" placeholder="请输入品种名称" required />
+
+    <label>币值 / 单价 / RM</label>
+    <div class="row3">
+      <select id="currency" onchange="updateRMPrice()">
+        <option value="CNY">CNY</option>
+        <option value="NTD">NTD</option>
+        <option value="VND">VND</option>
+        <option value="IDR">IDR</option>
+      </select>
+      <input type="text" id="price" placeholder="单价" oninput="updateRMPrice()">
+      <input type="text" id="price_rm" placeholder="RM" readonly>
+    </div>
+
+    <label>数量</label>
+    <input type="number" name="qty" min="0" />
+
+    <label>图片 URL</label>
+    <input type="url" name="image_url" placeholder="贴上图片网址 (Facebook 相簿)" />
+
+    <label>发货单号</label>
+    <input type="text" name="invoice" placeholder="请输入发货单号" />
+
+    <label>发货总棵数</label>
+    <input type="number" name="total_count" min="0" />
+
+    <label>这次发货总金额</label>
+    <input type="text" id="total_amount" placeholder="自动计算" readonly />
+
+    <label>包装备注</label>
+    <input type="text" name="pack_note" placeholder="纸箱/网套/托盘等" />
+
+    <label>抵达仓库日期</label>
+    <input type="text" name="arrive_warehouse" placeholder="DDMMYY 或 DDMMYYYY" onblur="validateDate(this)" />
+
+    <label>装柜日期</label>
+    <input type="text" name="ship_date" placeholder="DDMMYY 或 DDMMYYYY" onblur="validateDate(this)" />
+
+    <label>海运单号</label>
+    <input type="text" name="shipping_id" placeholder="请输入运单号" />
+
+    <label>到马运费</label>
+    <input type="text" id="freight_fee" placeholder="请输入马币金额" />
+
+    <label>抵达大马日期</label>
+    <input type="text" name="arrive_malaysia" placeholder="DDMMYY 或 DDMMYYYY" onblur="validateDate(this)" />
+
+    <label>运输天数</label>
+    <input type="number" name="shipping_days" min="0" />
+
+    <label>运费分摊比例 (%)</label>
+    <input type="number" name="freight_ratio" min="0" max="100" />
+
+    <label>花盆</label>
+    <input type="text" id="pot" placeholder="花盆成本" />
+
+    <label>苔藓</label>
+    <input type="text" id="moss" placeholder="苔藓成本" />
+
+    <label>本地运输</label>
+    <input type="text" id="local" placeholder="运输成本" />
+
+    <label>总成本</label>
+    <input type="text" id="total_cost" placeholder="自动计算" readonly />
+
+    <label>售价（20%~55%）</label>
+    <textarea id="price_summary" placeholder="自动生成售价..." rows="5" readonly></textarea>
   </form>
   <div class="center-btn">
     <button type="button" onclick="saveToStorage()">📂 手动储存全部资料</button>
@@ -105,23 +159,11 @@ function formatCurrency(value) {
 }
 
 function updateRMPrice() {
-  const rateMap = {
-    CNY: 1 / 1.55,
-    NTD: 0.15,
-    VND: 0.00018,
-    IDR: 0.00028
-  };
+  const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
   const currency = document.getElementById('currency')?.value;
   const price = parseFloat(document.getElementById('price')?.value.replace(/,/g, ''));
   const rm = rateMap[currency] && !isNaN(price) ? price * rateMap[currency] : '';
   if (document.getElementById('price_rm')) document.getElementById('price_rm').value = formatCurrency(rm);
-}
-
-function formatAllCurrencyInputs() {
-  ['price', 'freight_fee', 'total_amount', 'moss', 'pot', 'local'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el && el.value) el.value = formatCurrency(el.value);
-  });
 }
 
 function validateDate(input) {
@@ -144,34 +186,35 @@ function validateDate(input) {
   }
 }
 
-// 支持 Enter 跳格并阻止无效换行
-function setupFormNavigation() {
-  const form = document.getElementById('bonsaiForm');
-  const fields = Array.from(form.querySelectorAll('input, select, textarea'));
-  fields.forEach(input => {
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        if (input.validationMessage) {
-          e.preventDefault();
-          input.reportValidity();
-          return;
-        }
+document.querySelectorAll('input[type="text"], input[type="url"], input[type="number"], input[type="date"]').forEach(input => {
+  input.addEventListener('blur', formatAllCurrencyInputs);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (input.validationMessage) {
         e.preventDefault();
-        const index = fields.indexOf(e.target);
-        for (let i = index + 1; i < fields.length; i++) {
-          if (!fields[i].disabled && fields[i].type !== 'hidden') {
-            fields[i].focus();
-            break;
-          }
+        input.reportValidity();
+        return;
+      }
+      e.preventDefault();
+      const form = e.target.form;
+      const index = Array.prototype.indexOf.call(form.elements, e.target);
+      for (let i = index + 1; i < form.elements.length; i++) {
+        const el = form.elements[i];
+        if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') && !el.disabled && el.type !== 'hidden') {
+          el.focus();
+          break;
         }
       }
-    });
+    }
+  });
+});
+
+function formatAllCurrencyInputs() {
+  ['price', 'freight_fee', 'total_amount', 'moss', 'pot', 'local'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.value) el.value = formatCurrency(el.value);
   });
 }
-
-window.addEventListener('DOMContentLoaded', () => {
-  setupFormNavigation();
-});
 </script>
 </body>
 </html>
