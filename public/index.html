@@ -1,203 +1,168 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>盆根成本记录系统 Lover Legend Gardening</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>盆栽成本记录系统 Lover Legend Gardening</title>
   <style>
     body {
       font-family: sans-serif;
-      background-color: #f7f7f7;
-      padding: 0 20px 40px;
-      max-width: 1000px;
+      padding: 20px;
+      background: #f9f9f9;
+      max-width: 1200px;
       margin: auto;
     }
-    h1 {
-      text-align: center;
-      margin-top: 10px;
-    }
     h2 {
-      margin-top: 30px;
-      font-size: 20px;
-      color: #333;
+      text-align: center;
     }
-    label {
+    h2::after {
+      content: " Lover Legend Gardening";
+      font-size: 14px;
+      font-weight: normal;
+      color: #666;
       display: block;
-      margin: 10px 0 4px;
-      font-weight: bold;
     }
-    input, select, textarea {
-      width: 100%;
-      padding: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    .two-cols {
+    form {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      gap: 15px;
     }
-    .section {
-      margin-top: 40px;
-      border-top: 2px solid #ccc;
-      padding-top: 20px;
+    label {
+      font-weight: bold;
     }
-    .logo {
-      display: block;
-      margin: 0 auto 10px;
-      max-height: 70px;
+    textarea, input, select {
+      padding: 8px;
+      font-size: 16px;
+      width: 100%;
+      resize: vertical;
     }
-    a {
-      word-break: break-all;
-      color: blue;
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
-    .bold-red {
+    .section-title {
+      grid-column: span 2;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    .readonly {
+      background-color: #eee;
+    }
+    .price-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      grid-column: span 2;
+    }
+    .result-box {
+      background: #fff;
+      padding: 15px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    .highlight {
       color: red;
       font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <img class="logo" src="/logo.png" alt="logo" />
-  <h1>盆根成本记录系统 Lover Legend Gardening</h1>
-  <h2>🌱 盆根资料（含内陆发货信息）</h2>
+  <h2>盆栽成本记录系统</h2>
+  <img src="favicon.png" alt="icon" style="width: 60px; display: block; margin: auto;">
   <form>
-    <div class="two-cols">
-      <div>
-        <label>供应商</label>
-        <textarea required></textarea>
-      </div>
-      <div>
-        <label>品种</label>
-        <textarea required></textarea>
-      </div>
-      <div>
-        <label>单价（原币）</label>
-        <input type="text" onblur="formatCurrency(this)" required>
-      </div>
-      <div>
-        <label>币值</label>
-        <select required>
-          <option>CNY</option>
-          <option>VND</option>
-          <option>NTD</option>
-          <option>IDR</option>
-        </select>
-      </div>
-      <div>
-        <label>数量（棵）</label>
-        <input type="text" onblur="formatCurrency(this)" required>
-      </div>
-      <div>
-        <label>图片网址（URL）</label>
-        <a id="imageLink" href="#" target="_blank"></a>
-        <input type="url" oninput="updateLink(this)">
-      </div>
-      <div>
-        <label>发货单号</label>
-        <input type="text">
-      </div>
-      <div>
-        <label>这次发货总数（棵）</label>
-        <input type="text" readonly>
-      </div>
-      <div>
-        <label>这次发货总金额（RM）</label>
-        <input type="text" readonly>
-      </div>
-      <div>
-        <label>包装明细</label>
-        <textarea></textarea>
-      </div>
-    </div>
-    <div class="section">
-      <h2>🚛 发货详情</h2>
-      <div class="two-cols">
-        <div>
-          <label>装柜日期</label>
-          <input type="text" id="shipDate" placeholder="dd/mm/yyyy" oninput="formatDate(this); calcDays()">
-        </div>
-        <div>
-          <label>海运单号</label>
-          <input type="text">
-        </div>
-        <div>
-          <label>到大马运费（RM）</label>
-          <input type="text" id="shippingCost" onblur="formatCurrency(this); calcRatio()">
-        </div>
-        <div>
-          <label>抵达大马日期</label>
-          <input type="text" id="arriveDate" placeholder="dd/mm/yyyy" oninput="formatDate(this); calcDays()">
-        </div>
-        <div>
-          <label>运费天数</label>
-          <input type="text" id="daysResult" readonly>
-        </div>
-        <div>
-          <label>运费比例</label>
-          <input type="text" id="ratioResult" readonly>
-        </div>
-      </div>
+    <div class="section-title">🌱 盆栽资料（含内陆发货信息）</div>
+
+    <label>供应商</label>
+    <textarea placeholder="请输入供应商" rows="2"></textarea>
+
+    <label>品种</label>
+    <textarea placeholder="请输入品种" rows="2"></textarea>
+
+    <label>单价（原币）</label>
+    <input type="number" step="any" oninput="formatCurrency(this)">
+
+    <label>币值</label>
+    <select>
+      <option>CNY</option>
+      <option>VND</option>
+      <option>NTD</option>
+      <option>IDR</option>
+    </select>
+
+    <label>数量（棵）</label>
+    <input type="number" step="any" oninput="formatCurrency(this)">
+
+    <label>图片网址（URL）</label>
+    <input type="url" id="imgUrl" onblur="convertToLink(this)">
+
+    <label>发货单号</label>
+    <input type="text">
+
+    <label>这次发货总数（棵）</label>
+    <input type="number">
+
+    <label>这次发货总金额（RM）</label>
+    <input type="text" class="readonly" readonly>
+
+    <label>包装明细</label>
+    <textarea rows="2"></textarea>
+
+    <div class="section-title">🧮 成本计算</div>
+
+    <label>花盆（RM）</label>
+    <input type="number" step="any" oninput="updateCost()">
+
+    <label>苔藓（RM）</label>
+    <input type="number" step="any" oninput="updateCost()">
+
+    <label>本地运输（RM）</label>
+    <input type="number" step="any" oninput="updateCost()">
+
+    <label>总成本（RM）</label>
+    <input type="text" id="totalCost" class="readonly" readonly>
+
+    <div class="section-title">💰 不同利润售价</div>
+
+    <div class="result-box">
+      <div><strong>20% 售价：</strong>RM <span id="p20"></span></div>
+      <div><strong>30% 售价：</strong>RM <span id="p30"></span></div>
+      <div><strong>40% 售价：</strong>RM <span id="p40"></span></div>
+      <div><strong>50% 售价：</strong>RM <span id="p50" class="highlight"></span></div>
+      <div><strong>55% 售价：</strong>RM <span id="p55"></span></div>
     </div>
   </form>
 
   <script>
-    function formatCurrency(input) {
-      let val = parseFloat(input.value.replace(/,/g, ''));
-      if (!isNaN(val)) {
-        input.value = val.toLocaleString('en-MY', { minimumFractionDigits: 2 });
+    function formatCurrency(el) {
+      const value = parseFloat(el.value);
+      if (!isNaN(value)) {
+        el.value = value.toFixed(2);
       }
     }
 
-    function updateLink(input) {
-      const link = document.getElementById('imageLink');
-      if (input.value.startsWith('http')) {
-        link.href = input.value;
-        link.textContent = input.value;
-      } else {
-        link.textContent = '';
-        link.href = '#';
+    function convertToLink(el) {
+      const url = el.value.trim();
+      if (url) {
+        el.insertAdjacentHTML('beforebegin', `<a href="${url}" target="_blank">${url}</a><br>`);
       }
     }
 
-    function formatDate(input) {
-      let raw = input.value.replace(/[^0-9]/g, '');
-      if (raw.length === 6 || raw.length === 8) {
-        let d = raw.slice(0, 2);
-        let m = raw.slice(2, 4);
-        let y = raw.slice(4);
-        if (y.length === 2) y = '20' + y;
-        input.value = `${d}/${m}/${y}`;
-      }
-    }
+    function updateCost() {
+      const pot = parseFloat(document.querySelectorAll('input')[12].value) || 0;
+      const moss = parseFloat(document.querySelectorAll('input')[13].value) || 0;
+      const local = parseFloat(document.querySelectorAll('input')[14].value) || 0;
+      const total = pot + moss + local;
 
-    function calcDays() {
-      const ship = document.getElementById('shipDate').value;
-      const arrive = document.getElementById('arriveDate').value;
-      const out = document.getElementById('daysResult');
+      document.getElementById("totalCost").value = total.toFixed(2);
 
-      if (ship.match(/\d{2}\/\d{2}\/\d{4}/) && arrive.match(/\d{2}\/\d{2}\/\d{4}/)) {
-        const [ds, ms, ys] = ship.split('/');
-        const [da, ma, ya] = arrive.split('/');
-        const start = new Date(`${ys}-${ms}-${ds}`);
-        const end = new Date(`${ya}-${ma}-${da}`);
-        const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
-        if (!isNaN(diff)) out.value = diff + ' 天';
-      } else {
-        out.value = '';
-      }
-    }
-
-    function calcRatio() {
-      const costInput = document.getElementById('shippingCost');
-      const cost = parseFloat(costInput.value.replace(/,/g, ''));
-      const qty = 1; // placeholder: replace with actual quantity input
-      const out = document.getElementById('ratioResult');
-      if (!isNaN(cost) && qty > 0) {
-        out.value = (cost / qty).toFixed(2);
-      } else {
-        out.value = '';
-      }
+      document.getElementById("p20").innerText = (total * 1.26 * 1.12).toFixed(2);
+      document.getElementById("p30").innerText = (total * 1.43 * 1.12).toFixed(2);
+      document.getElementById("p40").innerText = (total * 1.67 * 1.12).toFixed(2);
+      document.getElementById("p50").innerText = (total * 2.0 * 1.12).toFixed(2);
+      document.getElementById("p55").innerText = (total * 2.23 * 1.12).toFixed(2);
     }
   </script>
 </body>
