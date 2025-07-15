@@ -160,11 +160,11 @@ function formatCurrency(val) {
 
 function updateRM() {
   const cur = document.getElementById('currency').value;
-  const rawVal = document.getElementById('price').value.replace(/,/g, '');
-  const raw = parseFloat(rawVal);
+  const rawText = document.getElementById('price').value.replace(/,/g, '');
+  const raw = parseFloat(rawText);
   const rate = rateMap[cur] || 0;
   const rm = raw * rate;
-  if (!isNaN(raw)) document.getElementById('price').value = (raw / 1000).toFixed(2);
+  if (!isNaN(raw)) document.getElementById('price').value = formatCurrency(raw);
   document.getElementById('price_rm').value = formatCurrency(rm);
   updateSalesPrices(rm);
 }
@@ -212,6 +212,7 @@ function validateDate(input) {
   }
 }
 
+// ➤ 回车跳格 + 日期验证 + 金额格式化
 const fields = Array.from(document.querySelectorAll('input, select, textarea'));
 fields.forEach((el, i) => {
   el.addEventListener('keydown', e => {
