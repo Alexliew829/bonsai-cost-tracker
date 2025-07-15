@@ -61,6 +61,9 @@
       -webkit-appearance: none;
       margin: 0;
     }
+    input[type=date]:invalid {
+      border-color: initial;
+    }
     .full {
       grid-column: 1 / -1;
     }
@@ -153,7 +156,10 @@ document.querySelectorAll('input[type="text"], input[type="url"], input[type="nu
   input.addEventListener('blur', formatAllCurrencyInputs);
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
-      if (input.validationMessage) return;
+      if (input.type === 'date' && input.validationMessage) {
+        e.preventDefault();
+        return;
+      }
       e.preventDefault();
       const form = e.target.form;
       const index = Array.prototype.indexOf.call(form.elements, e.target);
