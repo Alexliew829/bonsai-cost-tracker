@@ -51,6 +51,7 @@
       font-size: 14px;
       box-sizing: border-box;
       white-space: pre-wrap;
+      overflow: hidden;
     }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
@@ -91,7 +92,7 @@
     <img src="logo.png" alt="logo">
     <h1>盆栽成本记录系统 Lover Legend gardening</h1>
   </div>
-  <form id="bonsaiForm">
+  <form id="bonsaiForm" onkeydown="return event.key !== 'Enter';">
     <h2>🌱 盆栽资料（含内陆发货信息）</h2>
     <label>供应商</label>
     <label>品种</label>
@@ -181,12 +182,12 @@ function formatCurrency(value) {
 function updateRMPrice() {
   const rateMap = {
     CNY: 1 / 1.55,
-    NTD: 1 / 0.15,
-    VND: 1 / 0.00018,
-    IDR: 1 / 0.00028
+    NTD: 0.15,
+    VND: 0.0018,
+    IDR: 0.0028
   };
   const currency = document.getElementById('currency').value;
-  const price = parseFloat(document.getElementById('price').value);
+  const price = parseFloat(document.getElementById('price').value.replace(/,/g, ''));
   const rm = rateMap[currency] && !isNaN(price) ? price * rateMap[currency] : '';
   document.getElementById('price_rm').value = formatCurrency(rm);
 }
