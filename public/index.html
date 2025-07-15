@@ -90,7 +90,7 @@
 <body>
   <div class="header">
     <img src="logo.png" alt="logo">
-    <h1>盆栽成本记录系统 Lover Legend gardening</h1>
+    <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
   </div>
   <form id="bonsaiForm">
     <h2>🌱 盆栽资料（含内陆发货信息）</h2>
@@ -198,9 +198,10 @@ function validateDateField(input) {
     const day = val.slice(0, 2);
     const month = val.slice(2, 4);
     const year = val.slice(4);
-    const isValidDate = !isNaN(new Date(`20${year}-${month}-${day}`).getTime());
-    if (isValidDate) {
-      input.value = `${day}/${month}/${year}`;
+    const formatted = `${day}/${month}/${year}`;
+    const valid = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{2}$/.test(formatted);
+    if (valid) {
+      input.value = formatted;
       input.setCustomValidity('');
     } else {
       input.setCustomValidity('请输入有效日期');
@@ -234,11 +235,6 @@ document.querySelectorAll('input').forEach(input => {
   });
   if (input.id.includes('date')) {
     input.addEventListener('blur', () => validateDateField(input));
-  }
-  if (['price','freight_fee','total_amount','moss','pot','local'].includes(input.id)) {
-    input.addEventListener('blur', () => {
-      input.value = formatCurrency(input.value);
-    });
   }
 });
 
