@@ -1,185 +1,195 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>盆栽成本记录系统 Lover Legend gardening</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>盆栽成本记录系统 Lover Legend Gardening</title>
   <style>
     body {
       font-family: sans-serif;
-      background-color: #f7f7f7;
-      padding: 0 20px 40px;
-      max-width: 800px;
-      margin: auto;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 20px;
     }
-    h1 {
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .header img {
+      height: 50px;
+    }
+    .header h1 {
+      font-size: 24px;
+      margin: 0;
+    }
+    h2 {
+      font-size: 18px;
+      text-align: center;
+      margin: 5px 0 15px;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 1000px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 20px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+    }
+    .full {
+      grid-column: 1 / -1;
+    }
+    .center-btn {
       text-align: center;
       margin-top: 20px;
     }
-    h2 {
-      margin-top: 30px;
-      font-size: 20px;
-      color: #333;
-    }
-    label {
-      display: block;
-      margin: 10px 0 4px;
+    .highlight {
+      color: red;
       font-weight: bold;
     }
-    input, select {
-      width: 100%;
-      padding: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    input:invalid {
+    .error {
       border: 2px solid red;
+      background-color: #ffe6e6;
     }
-    .section {
-      margin-top: 40px;
-      border-top: 2px solid #ccc;
-      padding-top: 20px;
-    }
-    .logo {
-      display: block;
-      margin: 0 auto 10px;
-      max-height: 60px;
-    }
-    .link-input {
-      word-break: break-all;
+    .url-link {
+      color: blue;
+      text-decoration: underline;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <img class="logo" src="/logo.png" alt="logo" />
-  <h1>盆栽成本记录系统 Lover Legend gardening</h1>
-
+  <div class="header">
+    <img src="logo.png" alt="logo">
+    <h1>盆栽成本记录系统 Lover Legend gardening</h1>
+  </div>
   <h2>🌱 盆栽资料（含内陆发货信息）</h2>
-
-  <form>
-    <label>供应商</label>
-    <input type="text" required onkeydown="disableEnter(event)">
-
-    <label>品种</label>
-    <input type="text" required onkeydown="disableEnter(event)">
-
-    <label>单价（原币）</label>
-    <input type="number" step="0.01" required onblur="formatCurrency(this)">
-
+  <form id="bonsaiForm">
+    <label>供应商</label><input id="supplier" required />
+    <label>品种</label><input id="variety" required />
+    <label>单价（原币）</label><input id="price" type="text" required />
     <label>币值</label>
-    <select required>
-      <option>CNY</option>
-      <option>VND</option>
-      <option>NTD</option>
-      <option>IDR</option>
+    <select id="currency">
+      <option value="CNY">CNY</option>
+      <option value="VND">VND</option>
+      <option value="NTD">NTD</option>
+      <option value="IDR">IDR</option>
     </select>
-
-    <label>数量（棵）</label>
-    <input type="number" required>
-
+    <label>数量（棵）</label><input id="quantity" type="number" step="1" required />
     <label>图片网址（URL）</label>
-    <input type="url" class="link-input" onchange="updateLink(this)">
-    <div id="urlPreview"></div>
+    <input id="image_url" type="url" />
+    <span id="image_link" class="url-link full" style="display:none;"></span>
+    <label>发货单号</label><input id="shipment_id" />
+    <label>这次发货总数（棵）</label><input id="total_plants" type="number" step="1" required />
+    <label>这次发货总金额（RM）</label><input id="total_amount" type="text" required />
+    <label>包装明细</label><input id="packing" />
+    <label class="full">抵达仓库日期</label><input id="warehouse_date" type="text" placeholder="dd/mm/yyyy" class="full" maxlength="10" required />
 
-    <label>发货单号</label>
-    <input type="text">
+    <h2 class="full">📦 发货资料</h2>
+    <label>装柜日期</label><input id="container_date" type="text" placeholder="dd/mm/yyyy" />
+    <label>海运单号</label><input id="shipping_no" />
+    <label>到大马运费（RM）</label><input id="freight_fee" type="text" />
+    <label>抵达大马日期</label><input id="arrival_date" type="text" placeholder="dd/mm/yyyy" />
+    <label class="full">运输天数（自动）</label><input id="days" disabled class="full" />
+    <label class="full">运费比例（自动）</label><input id="freight_ratio" disabled class="full" />
 
-    <label>这次发货总数（棵）</label>
-    <input type="number">
-
-    <label>这次发货总金额（RM）</label>
-    <input type="text" onblur="formatCurrency(this)">
-
-    <label>包装明细</label>
-    <input type="text">
-
-    <label>抵达仓库日期</label>
-    <input type="text" placeholder="dd/mm/yyyy" oninput="formatDate(this)">
-
-    <div class="section">
-      <h2>🚛 发货资料</h2>
-
-      <label>装柜日期</label>
-      <input type="text" placeholder="dd/mm/yyyy" id="shipDate" oninput="formatDate(this); calcDays()">
-
-      <label>海运单号</label>
-      <input type="text">
-
-      <label>到大马运费（RM）</label>
-      <input type="number" step="0.01" id="shippingCost" onblur="formatCurrency(this); calcRatio()">
-
-      <label>抵达大马日期</label>
-      <input type="text" placeholder="dd/mm/yyyy" id="arriveDate" oninput="formatDate(this); calcDays()">
-
-      <label>运输天数（自动）</label>
-      <input type="text" id="daysResult" readonly>
-
-      <label>运费比例（自动）</label>
-      <input type="text" id="ratioResult" readonly>
-    </div>
+    <h2 class="full">🧾 成本与销售细节</h2>
+    <label>苔藓成本 RM</label><input id="moss" type="text" />
+    <label>花盆成本 RM</label><input id="pot" type="text" />
+    <label>本地运输 RM</label><input id="local" type="text" />
+    <label>原成本（自动）</label><input id="base_cost" disabled />
+    <label>总成本（自动）</label><input id="total_cost" disabled />
+    <label>销售价 20%</label><input id="price_20" disabled />
+    <label>销售价 30%</label><input id="price_30" disabled />
+    <label>销售价 40%</label><input id="price_40" disabled />
+    <label class="highlight">销售价 50%</label><input id="price_50" disabled />
+    <label>销售价 55%</label><input id="price_55" disabled />
   </form>
+  <div class="center-btn">
+    <button onclick="saveToStorage()">💾 手动储存全部资料</button>
+  </div>
 
-  <script>
-    function disableEnter(event) {
-      if (event.key === 'Enter') {
-        event.preventDefault();
+<script>
+function formatCurrency(value) {
+  const n = parseFloat(value.replace(/,/g, ''));
+  return isNaN(n) ? '' : n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function validateNumberField(el) {
+  const value = el.value.replace(/,/g, '');
+  if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+    el.classList.add('error');
+    return false;
+  } else {
+    el.value = formatCurrency(value);
+    el.classList.remove('error');
+    return true;
+  }
+}
+
+function formatDateInput(val) {
+  const digits = val.replace(/\D/g, '');
+  if (digits.length === 6) {
+    return `${digits.slice(0,2)}/${digits.slice(2,4)}/20${digits.slice(4)}`;
+  } else if (digits.length === 8) {
+    return `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
+  } else {
+    return val;
+  }
+}
+
+function handleDateInput(e) {
+  const val = e.target.value;
+  e.target.value = formatDateInput(val);
+}
+
+// ✅ 自动跳下一行（支持文字字段）
+document.querySelectorAll('#bonsaiForm input').forEach(el => {
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = el.form;
+      const index = Array.from(form.elements).indexOf(el);
+      if (index > -1 && index + 1 < form.elements.length) {
+        form.elements[index + 1].focus();
       }
     }
+  });
+});
 
-    function formatCurrency(input) {
-      let val = parseFloat(input.value.replace(/,/g, ''));
-      if (!isNaN(val)) {
-        input.value = val.toLocaleString('en-MY', { minimumFractionDigits: 2 });
-      }
-    }
+// ✅ 日期输入格式修正
+['warehouse_date', 'arrival_date', 'container_date'].forEach(id => {
+  document.getElementById(id).addEventListener('input', handleDateInput);
+});
 
-    function updateLink(input) {
-      const div = document.getElementById('urlPreview');
-      div.innerHTML = '';
-      if (input.value.startsWith('http')) {
-        div.innerHTML = `<a href="${input.value}" target="_blank">点击查看图片</a>`;
-      }
-    }
-
-    function formatDate(input) {
-      let raw = input.value.replace(/[^0-9]/g, '');
-      if (raw.length === 6 || raw.length === 8) {
-        let d = raw.slice(0, 2);
-        let m = raw.slice(2, 4);
-        let y = raw.slice(4);
-        if (y.length === 2) y = '20' + y;
-        input.value = `${d}/${m}/${y}`;
-      }
-    }
-
-    function calcDays() {
-      const ship = document.getElementById('shipDate').value;
-      const arrive = document.getElementById('arriveDate').value;
-      const out = document.getElementById('daysResult');
-
-      if (/\d{2}\/\d{2}\/\d{4}/.test(ship) && /\d{2}\/\d{2}\/\d{4}/.test(arrive)) {
-        const [ds, ms, ys] = ship.split('/');
-        const [da, ma, ya] = arrive.split('/');
-        const start = new Date(`${ys}-${ms}-${ds}`);
-        const end = new Date(`${ya}-${ma}-${da}`);
-        const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
-        if (!isNaN(diff)) out.value = diff + ' 天';
-      } else {
-        out.value = '';
-      }
-    }
-
-    function calcRatio() {
-      const cost = parseFloat(document.getElementById('shippingCost').value.replace(/,/g, ''));
-      const totalQty = document.querySelector('input[placeholder="dd/mm/yyyy"]').previousElementSibling.value;
-      const out = document.getElementById('ratioResult');
-      const qty = parseFloat(totalQty);
-      if (!isNaN(cost) && !isNaN(qty) && qty > 0) {
-        out.value = (cost / qty).toFixed(2);
-      } else {
-        out.value = '';
-      }
-    }
-  </script>
+// ✅ 图片网址预览链接
+const imageInput = document.getElementById('image_url');
+const imageLink = document.getElementById('image_link');
+imageInput.addEventListener('input', () => {
+  const url = imageInput.value.trim();
+  if (url.startsWith('http')) {
+    imageLink.textContent = url;
+    imageLink.href = url;
+    imageLink.style.display = 'inline';
+  } else {
+    imageLink.style.display = 'none';
+  }
+});
+imageLink.addEventListener('click', () => {
+  window.open(imageLink.href, '_blank');
+});
+</script>
 </body>
 </html>
