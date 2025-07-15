@@ -38,7 +38,7 @@
       max-width: 1000px;
       margin: auto;
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: 1fr 1fr;
       gap: 12px 20px;
     }
     label {
@@ -49,6 +49,7 @@
       width: 100%;
       padding: 6px 8px;
       font-size: 14px;
+      box-sizing: border-box;
     }
     .full {
       grid-column: 1 / -1;
@@ -62,8 +63,8 @@
       font-weight: bold;
     }
     .error {
-      border: 2px solid red;
-      background-color: #ffe6e6;
+      border: 2px solid red !important;
+      background-color: #ffe6e6 !important;
     }
     .url-link {
       color: blue;
@@ -119,7 +120,7 @@
   </form>
 
   <div class="center-btn">
-    <button onclick="saveToStorage()">💾 手动储存全部资料</button>
+    <button type="button" onclick="saveToStorage()">💾 手动储存全部资料</button>
   </div>
 
 <script>
@@ -138,6 +139,12 @@ function validateAndFormat(el) {
   }
 }
 
+function isValidDate(str) {
+  const [dd, mm, yyyy] = str.split('/');
+  const d = new Date(`${yyyy}-${mm}-${dd}`);
+  return d instanceof Date && !isNaN(d) && d.getDate() == dd && (parseInt(mm) >= 1 && parseInt(mm) <= 12);
+}
+
 function formatDateInput(val) {
   const digits = val.replace(/\D/g, '');
   if (digits.length === 6) return `${digits.slice(0,2)}/${digits.slice(2,4)}/20${digits.slice(4)}`;
@@ -146,10 +153,16 @@ function formatDateInput(val) {
 }
 
 function handleDateInput(e) {
-  e.target.value = formatDateInput(e.target.value);
+  const input = e.target;
+  input.value = formatDateInput(input.value);
+  if (input.value.length === 10 && !isValidDate(input.value)) {
+    input.classList.add('error');
+  } else {
+    input.classList.remove('error');
+  }
 }
 
-// ✅ Enter 自动跳到下一行，同时支持方向键
+// 自动跳下一格
 document.querySelectorAll('#bonsaiForm input').forEach(el => {
   el.addEventListener('keydown', e => {
     const form = el.form;
@@ -162,29 +175,54 @@ document.querySelectorAll('#bonsaiForm input').forEach(el => {
     }
   });
 
-  // ✅ 自动格式化货币
   el.addEventListener('blur', () => {
-    if (el.type === 'text' && el.id !== 'image_url') {
+    if (el.type === 'text' && el.id !== 'image_url' && el.id.includes('price') || el.id.includes('fee') || el.id === 'local' || el.id === 'moss' || el.id === 'pot' || el.id === 'total_amount') {
       validateAndFormat(el);
     }
   });
 });
 
-// ✅ 日期输入自动格式修正
+// 日期监听
 ['warehouse_date', 'arrival_date', 'container_date'].forEach(id => {
   document.getElementById(id).addEventListener('input', handleDateInput);
 });
 
-// ✅ 图片网址自动变为可点击
-document.getElementById('image_url').addEventListener('input', e => {
-  const val = e.target.value.trim();
-  if (val.startsWith('http')) {
-    e.target.style.color = 'blue';
-    e.target.style.textDecoration = 'underline';
-    e.target.style.cursor = 'pointer';
-    e.target.addEventListener('click', () => window.open(val, '_blank'));
+// 图片网址变链接
+const imgInput = document.getElementById('image_url');
+imgInput.addEventListener('input', () => {
+  if (imgInput.value.startsWith('http')) {
+    imgInput.style.color = 'blue';
+    imgInput.style.textDecoration = 'underline';
+    imgInput.style.cursor = 'pointer';
+    imgInput.onclick = () => window.open(imgInput.value, '_blank');
+  } else {
+    imgInput.style = '';
+    imgInput.onclick = null;
   }
 });
+
+// ✅ 储存资料到 localStorage
+function saveToStorage() {
+  const data = {};
+  document.querySelectorAll('#bonsaiForm input, #bonsaiForm select').forEach(el => {
+    data[el.id] = el.value;
+  });
+  localStorage.setItem('bonsai_form_data', JSON.stringify(data));
+  alert('✅ 资料已储存！');
+}
+
+// ✅ 从 localStorage 载入资料
+function loadFromStorage() {
+  const data = JSON.parse(localStorage.getItem('bonsai_form_data') || '{}');
+  Object.keys(data).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = data[id];
+  });
+}
+loadFromStorage();
+
+// ✅ 每 5 分钟自动储存
+setInterval(saveToStorage, 5 * 60 * 1000);
 </script>
 </body>
 </html>
