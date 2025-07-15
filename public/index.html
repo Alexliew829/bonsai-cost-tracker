@@ -239,6 +239,10 @@ fields.forEach((el, i) => {
 
 document.getElementById('currency').addEventListener('change', updateRM);
 document.getElementById('price').addEventListener('input', updateRM);
+document.getElementById('price').addEventListener('focus', () => {
+  const el = document.getElementById('price');
+  el.value = el.value.replace(/,/g, '');
+});
 </script>
 </body>
 </html>
