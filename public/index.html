@@ -38,12 +38,13 @@
       max-width: 1000px;
       margin: auto;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px 20px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
     }
     label {
       font-weight: bold;
       font-size: 14px;
+      grid-column: span 1;
     }
     input, select, textarea {
       width: 100%;
@@ -52,6 +53,7 @@
       box-sizing: border-box;
       white-space: pre-wrap;
       overflow: hidden;
+      grid-column: span 1;
     }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
@@ -73,13 +75,6 @@
       color: blue;
       text-decoration: underline;
       cursor: pointer;
-    }
-    .row3 {
-      display: flex;
-      gap: 6px;
-    }
-    .row3 > * {
-      flex: 1;
     }
   </style>
 </head>
