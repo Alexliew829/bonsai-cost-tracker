@@ -50,8 +50,11 @@
       padding: 6px 8px;
       font-size: 14px;
       box-sizing: border-box;
+    }
+    textarea {
       white-space: pre-wrap;
-      overflow: hidden;
+      overflow-wrap: break-word;
+      resize: vertical;
     }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
@@ -125,7 +128,7 @@
 
     <label>包装明细</label>
     <label>抵达仓库日期</label>
-    <input id="packing" />
+    <textarea id="packing"></textarea>
     <input id="warehouse_date" type="text" placeholder="06/07/2025" maxlength="10" required oninput="validateDate(this)" />
 
     <h2>🚛 发货资料</h2>
@@ -211,6 +214,7 @@ function validateDate(input) {
       input.value = `${day}/${month}/${year.slice(-2)}`;
     }
     input.classList.remove('error');
+    input.title = '';
   } else if (val.length > 0) {
     input.classList.add('error');
     input.title = '请输入有效日期';
