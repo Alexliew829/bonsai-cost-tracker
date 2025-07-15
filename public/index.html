@@ -66,6 +66,11 @@
       border: 2px solid red !important;
       background-color: #ffe6e6 !important;
     }
+    .url-link {
+      color: blue;
+      text-decoration: underline;
+      cursor: pointer;
+    }
     .row3 {
       display: flex;
       gap: 6px;
@@ -98,7 +103,7 @@
     </div>
 
     <label>数量（棵）</label><input id="quantity" type="number" step="1" required />
-    <label>图片网址（URL）</label><input id="image_url" type="url" class="url-link" />
+    <label>图片网址（URL）</label><input id="image_url" type="url" class="url-link" onclick="if(this.value.startsWith('http')) window.open(this.value, '_blank')" />
     <label>发货单号</label><input id="shipment_id" />
     <label>这次发货总数（棵）</label><input id="total_plants" type="number" step="1" required />
     <label>这次发货总金额（RM）</label><input id="total_amount" type="text" required />
@@ -129,19 +134,10 @@
     <button type="button" onclick="saveToStorage()">📂 手动储存全部资料</button>
   </div>
 <script>
-// 汇率换算
-function convertToRM() {
-  const rates = { CNY: 1.55, NTD: 1/0.15, VND: 1/0.00018, IDR: 1/0.00028 };
-  const cur = document.getElementById('currency').value;
-  const val = parseFloat(document.getElementById('price').value.replace(/,/g, ''));
-  const rate = rates[cur];
-  const result = (!isNaN(val) && rate) ? val / rate : '';
-  document.getElementById('price_rm').value = isNaN(result) ? '' : result.toLocaleString('en-MY', {minimumFractionDigits:2});
-}
-
+// ✅ 新增：货币格式化
 function formatCurrencyField(el) {
   const raw = el.value.replace(/,/g, '');
-  if (!/^-?\d+(\.\d{1,2})?$/.test(raw)) {
+  if (!/^\d+(\.\d{1,2})?$/.test(raw)) {
     el.classList.add('error');
   } else {
     el.value = parseFloat(raw).toLocaleString('en-MY', {minimumFractionDigits:2});
@@ -149,54 +145,24 @@ function formatCurrencyField(el) {
   }
 }
 
-function formatDateInput(el) {
-  const val = el.value.replace(/\D/g, '');
-  if (val.length === 6) el.value = `${val.slice(0,2)}/${val.slice(2,4)}/20${val.slice(4)}`;
-  else if (val.length === 8) el.value = `${val.slice(0,2)}/${val.slice(2,4)}/${val.slice(4)}`;
-  validateDate(el);
-}
-
-function validateDate(el) {
-  const parts = el.value.split('/');
-  const valid = parts.length === 3 && !isNaN(Date.parse(`${parts[2]}-${parts[1]}-${parts[0]}`));
-  if (!valid) el.classList.add('error');
-  else el.classList.remove('error');
-}
-
-function saveToStorage() {
-  const data = {};
-  document.querySelectorAll('#bonsaiForm input, #bonsaiForm select').forEach(el => data[el.id] = el.value);
-  localStorage.setItem('bonsai_form_data', JSON.stringify(data));
-  alert('✅ 资料已储存');
-}
-
-function loadFromStorage() {
-  const saved = JSON.parse(localStorage.getItem('bonsai_form_data') || '{}');
-  Object.entries(saved).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if (el) el.value = val;
+// ✅ 支持 Enter 跳格
+const allInputs = document.querySelectorAll('input, select');
+allInputs.forEach((el, i) => {
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const next = allInputs[i + 1];
+      if (next) next.focus();
+    }
   });
-  convertToRM();
-}
-
-['currency','price'].forEach(id => document.getElementById(id).addEventListener('input', convertToRM));
-document.querySelectorAll('input[type=text]').forEach(el => el.addEventListener('blur', () => {
-  if (el.id !== 'price_rm') formatCurrencyField(el);
-}));
-document.querySelectorAll('input[type=text]').forEach(el => el.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    const inputs = Array.from(document.querySelectorAll('input, select'));
-    const idx = inputs.indexOf(e.target);
-    if (idx > -1 && idx+1 < inputs.length) inputs[idx+1].focus();
-  }
-}));
-['warehouse_date','arrival_date','container_date'].forEach(id => {
-  const el = document.getElementById(id);
-  el.addEventListener('input', () => formatDateInput(el));
 });
-loadFromStorage();
-setInterval(saveToStorage, 5 * 60 * 1000);
+
+// ✅ 自动格式化金额输入框
+allInputs.forEach(el => {
+  if (el.type === 'text' && !el.disabled && !el.id.includes('date') && !el.id.includes('url')) {
+    el.addEventListener('blur', () => formatCurrencyField(el));
+  }
+});
 </script>
 </body>
 </html>
