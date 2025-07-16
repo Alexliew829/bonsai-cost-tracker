@@ -34,7 +34,8 @@
       cursor: pointer;
       position: absolute;
       right: 10px;
-      top: 10px;
+      top: 0px;
+      transform: translateY(-100%);
     }
     #bonsaiForm {
       max-width: 1000px;
@@ -45,6 +46,10 @@
     .entry {
       margin-bottom: 8px;
       font-size: 16px;
+    }
+    .error {
+      color: red;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -58,15 +63,37 @@
   </div>
 
   <form id="bonsaiForm">
-    <!-- 利润售价显示区域 -->
+    <div>
+      <label>币值：</label>
+      <select id="currency">
+        <option value="CNY">CNY</option>
+        <option value="NTD">NTD</option>
+        <option value="VND">VND</option>
+        <option value="IDR">IDR</option>
+      </select>
+      <label>单价（原币）：</label>
+      <input id="price" type="number" />
+      <label>单价（RM）：</label>
+      <input id="price_rm" type="text" disabled />
+    </div>
+    <div>
+      <label>发货日期（格式170725 或17072025）：</label>
+      <input id="date_input" type="text" placeholder="170725" />
+      <span id="date_error" class="error"></span>
+    </div>
     <div id="priceSummary" class="full"></div>
   </form>
 
   <script>
+    const rateMap = {
+      CNY: 1 / 1.55,
+      NTD: 0.15,
+      VND: 0.00018,
+      IDR: 0.00028
+    };
+
     function formatCurrency(val) {
-      const num = parseFloat(val);
-      if (isNaN(num)) return '-';
-      return num.toLocaleString('en-MY', {
+      return parseFloat(val).toLocaleString('en-MY', {
         style: 'currency', currency: 'MYR', minimumFractionDigits: 2
       }).replace('MYR', 'RM');
     }
@@ -81,17 +108,49 @@
         "55%": rmCost * 2.23 * 1.12
       };
       let html = `<div class="entry"><strong>实际成本：</strong>RM ${formatCurrency(rmCost)}</div>`;
-      html += `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>`;
-      html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>`;
-      html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>`;
-      html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>`;
-      html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>`;
-      html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>`;
+      html += `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}<\/div>`;
+      html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}<\/div>`;
+      html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}<\/div>`;
+      html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}<\/div>`;
+      html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}<\/div>`;
+      html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}<\/div>`;
       document.getElementById("priceSummary").innerHTML = html;
     }
 
-    // ✅ 页面载入时自动测试显示
-    updateSalesPrices(1000); // 可改为表单实时计算
+    document.getElementById("price").addEventListener("blur", calculateRmPrice);
+    document.getElementById("currency").addEventListener("change", calculateRmPrice);
+
+    function calculateRmPrice() {
+      const currency = document.getElementById("currency").value;
+      const price = parseFloat(document.getElementById("price").value);
+      if (!isNaN(price) && rateMap[currency]) {
+        const rmCost = price * rateMap[currency];
+        document.getElementById("price_rm").value = rmCost.toLocaleString('en-MY', { minimumFractionDigits: 2 });
+        updateSalesPrices(rmCost);
+      } else {
+        document.getElementById("price_rm").value = '';
+        document.getElementById("priceSummary").innerHTML = '';
+      }
+    }
+
+    document.getElementById("date_input").addEventListener("blur", function() {
+      const input = this.value.trim();
+      const errorElem = document.getElementById("date_error");
+      let parsedDate = "";
+      errorElem.textContent = "";
+
+      if (/^\d{6}$/.test(input)) {
+        parsedDate = input.replace(/(\d{2})(\d{2})(\d{2})/, "$1/$2/$3");
+      } else if (/^\d{8}$/.test(input)) {
+        parsedDate = input.replace(/(\d{2})(\d{2})(\d{4})/, "$1/$2/$3");
+      } else {
+        errorElem.textContent = "请输入有效日期";
+        this.focus();
+        return;
+      }
+
+      this.value = parsedDate;
+    });
 
     function manualSave() {
       alert("📝 模拟储存成功（待开发完整功能）");
