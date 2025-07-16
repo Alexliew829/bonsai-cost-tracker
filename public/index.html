@@ -11,11 +11,15 @@
       margin: 0;
       padding: 20px;
     }
+    .header-container {
+      display: flex;
+      justify-content: center;
+      position: relative;
+    }
     .header {
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
       gap: 10px;
       margin-bottom: 10px;
     }
@@ -31,7 +35,7 @@
       font-size: 14px;
       cursor: pointer;
       position: absolute;
-      right: 20px;
+      right: 0;
       top: 50%;
       transform: translateY(-50%);
     }
@@ -99,13 +103,15 @@
   </style>
 </head>
 <body>
-  <form id="bonsaiForm">
+  <div class="header-container">
     <div class="header">
       <img src="logo.png" alt="logo">
       <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
-      <button class="save-btn" onclick="manualSave()">📂 手动储存全部资料</button>
     </div>
+    <button class="save-btn" onclick="manualSave()">📂 手动储存全部资料</button>
+  </div>
 
+  <form id="bonsaiForm">
     <h2>🌱 盆栽资料</h2>
     <label>供应商</label><label>品种</label>
     <input id="supplier" /><input id="variety" />
