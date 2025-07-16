@@ -36,7 +36,7 @@
       cursor: pointer;
       position: absolute;
       right: 0;
-      top: 0;
+      top: 20px;
       transform: translateY(0);
     }
     h2 {
@@ -107,11 +107,12 @@
     <div class="header">
       <img src="logo.png" alt="logo">
       <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
+      <button class="save-btn" onclick="manualSave()">📂 手动储存全部资料</button>
     </div>
   </div>
 
   <form id="bonsaiForm">
-    <h2>🌱 盆栽资料 <button class="save-btn" onclick="manualSave()">📂 手动储存全部资料</button></h2>
+    <h2>🌱 盆栽资料</h2>
     <label>供应商</label><label>品种</label>
     <input id="supplier" /><input id="variety" />
 
@@ -133,7 +134,8 @@
     <input id="shipment_id" />
 
     <label>发货总数</label><label>发货总金额（RM）</label>
-    <input id="total_plants" type="number" inputmode="numeric" /><input id="total_amount" />
+    <input id="total_plants" type="number" inputmode="numeric" />
+    <input id="total_amount" inputmode="decimal" />
 
     <label>包装明细（木架、箱子）</label><label>抵达仓库日期</label>
     <input id="packing" type="number" inputmode="numeric" />
@@ -145,7 +147,7 @@
 
     <label>抵达日期</label><label>运费（RM）</label>
     <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="freight_fee" />
+    <input id="freight_fee" inputmode="decimal" />
 
     <label>天数（自动）</label><label>比例（自动）</label>
     <input id="days" disabled /><input id="freight_ratio" disabled />
