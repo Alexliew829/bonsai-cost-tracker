@@ -37,9 +37,8 @@
       font-size: 14px;
       cursor: pointer;
       position: absolute;
-      top: 50%;
-      right: 20px;
-      transform: translateY(-50%);
+      top: 0;
+      right: 0;
     }
     h2 {
       font-size: 18px;
@@ -169,6 +168,19 @@
 
   <script>
     const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
+
+    document.getElementById("currency").addEventListener("change", updateRMPrice);
+    document.getElementById("price").addEventListener("input", updateRMPrice);
+
+    function updateRMPrice() {
+      const currency = document.getElementById("currency").value;
+      const price = parseFloat(document.getElementById("price").value.replace(/,/g, ''));
+      const rate = rateMap[currency] || 1;
+      if (!isNaN(price)) {
+        const rm = price * rate;
+        document.getElementById("price_rm").value = rm.toLocaleString('en-MY', { minimumFractionDigits: 2 });
+      }
+    }
 
     const currencyInputIds = ['price', 'freight_fee', 'total_amount', 'local', 'moss', 'pot'];
     currencyInputIds.forEach(id => {
