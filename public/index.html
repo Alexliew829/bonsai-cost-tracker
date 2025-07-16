@@ -199,15 +199,17 @@
         "50%": rmCost * 2.00 * 1.12,
         "55%": rmCost * 2.23 * 1.12,
       };
-       let html = `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>`;
-  html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>`;
-  html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>`;
-  html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>`;
-  html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>`;
-  html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>`;
-      }
+      let html = '';
+      html += `<div class="entry"><strong>实际成本：</strong>${formatCurrency(rmCost)}</div>`;
+      html += `<div class="entry"><strong>20% 利润售价：</strong>${formatCurrency(prices["20%"])</div>`;
+      html += `<div class="entry"><strong>30% 利润售价：</strong>${formatCurrency(prices["30%"])</div>`;
+      html += `<div class="entry"><strong>40% 利润售价：</strong>${formatCurrency(prices["40%"])</div>`;
+      html += `<div class="entry"><strong>45% 利润售价：</strong>${formatCurrency(prices["45%"])</div>`;
+      html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>${formatCurrency(prices["50%"])</div>`;
+      html += `<div class="entry"><strong>55% 利润售价：</strong>${formatCurrency(prices["55%"])</div>`;
       document.getElementById("priceSummary").innerHTML = html;
     }
+
     document.getElementById("base_cost").addEventListener("input", (e) => {
       const val = parseFloat(e.target.value.replace(/,/g, ''));
       if (!isNaN(val)) updateSalesPrices(val);
