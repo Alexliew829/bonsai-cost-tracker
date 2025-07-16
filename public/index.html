@@ -121,7 +121,7 @@
         <option value="NTD">NTD</option>
         <option value="IDR">IDR</option>
       </select>
-      <input id="price" type="text" inputmode="decimal" />
+      <input id="price" type="text" inputmode="decimal" value="" />
       <input id="price_rm" disabled />
     </div>
     <input id="quantity" type="number" inputmode="numeric" pattern="[0-9]*" />
@@ -172,8 +172,7 @@ function updateRM() {
   const raw = parseFloat(rawText);
   const rate = rateMap[cur] || 0;
   const rm = raw * rate;
-  if (!isNaN(raw)) document.getElementById('price').value = formatCurrency(raw);
-  document.getElementById('price_rm').value = formatCurrency(rm);
+  document.getElementById('price_rm').value = isNaN(rm) ? '' : formatCurrency(rm);
   updateSalesPrices(rm);
 }
 
@@ -245,9 +244,20 @@ fields.forEach((el, i) => {
   }
 });
 
+// ✅ 处理 price（原币）输入逻辑，实时换算 RM，blur 后才格式化千位数
+const priceInput = document.getElementById('price');
+priceInput.addEventListener('input', () => {
+  const raw = parseFloat(priceInput.value.replace(/,/g, ''));
+  const rate = rateMap[document.getElementById('currency').value] || 0;
+  const rm = raw * rate;
+  document.getElementById('price_rm').value = isNaN(rm) ? '' : formatCurrency(rm);
+});
+priceInput.addEventListener('blur', () => {
+  priceInput.value = formatCurrency(priceInput.value);
+  updateRM();
+});
+
 document.getElementById('currency').addEventListener('change', updateRM);
-document.getElementById('price').addEventListener('input', updateRM);
-document.getElementById('price').addEventListener('blur', updateRM);
 
 function manualSave() {
   alert("✅ 模拟：资料已储存（你可替换为真实上传逻辑）");
