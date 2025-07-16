@@ -21,7 +21,7 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin-bottom: 10px;
+      margin-bottom: -10px;
       position: relative;
       max-width: 1000px;
       width: 100%;
@@ -38,9 +38,8 @@
       font-size: 14px;
       cursor: pointer;
       position: absolute;
+      top: -38px;
       right: 0;
-      top: 0;
-      transform: translateY(0);
     }
     h2 {
       font-size: 18px;
@@ -76,9 +75,6 @@
     input[type=number]::-webkit-outer-spin-button {
       -webkit-appearance: none;
       margin: 0;
-    }
-    input, textarea {
-      white-space: nowrap;
     }
     textarea {
       resize: none;
@@ -167,13 +163,13 @@
     <input id="local" inputmode="decimal" /><input id="moss" inputmode="decimal" />
 
     <label>花盆</label><label>原成本</label>
-    <input id="pot" inputmode="decimal" /><input id="base_cost" disabled />
+    <input id="pot" inputmode="decimal" /><input id="base_cost" inputmode="decimal" />
 
     <div id="priceSummary" class="full"></div>
   </form>
 
   <script>
-    const currencyInputIds = ['price', 'freight_fee', 'total_amount', 'local', 'moss', 'pot'];
+    const currencyInputIds = ['price', 'freight_fee', 'total_amount', 'local', 'moss', 'pot', 'base_cost'];
     currencyInputIds.forEach(id => {
       const input = document.getElementById(id);
       input.addEventListener('blur', () => {
@@ -201,16 +197,16 @@
       };
       let html = '';
       html += `<div class="entry"><strong>实际成本：</strong>${formatCurrency(rmCost)}</div>`;
-      html += `<div class="entry"><strong>20% 利润售价：</strong>${formatCurrency(prices["20%"])</div>`;
-      html += `<div class="entry"><strong>30% 利润售价：</strong>${formatCurrency(prices["30%"])</div>`;
-      html += `<div class="entry"><strong>40% 利润售价：</strong>${formatCurrency(prices["40%"])</div>`;
-      html += `<div class="entry"><strong>45% 利润售价：</strong>${formatCurrency(prices["45%"])</div>`;
-      html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>${formatCurrency(prices["50%"])</div>`;
-      html += `<div class="entry"><strong>55% 利润售价：</strong>${formatCurrency(prices["55%"])</div>`;
+      html += `<div class="entry"><strong>20% 利润售价：</strong>${formatCurrency(prices["20%"])}</div>`;
+      html += `<div class="entry"><strong>30% 利润售价：</strong>${formatCurrency(prices["30%"])}</div>`;
+      html += `<div class="entry"><strong>40% 利润售价：</strong>${formatCurrency(prices["40%"])}</div>`;
+      html += `<div class="entry"><strong>45% 利润售价：</strong>${formatCurrency(prices["45%"])}</div>`;
+      html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>${formatCurrency(prices["50%"])}</div>`;
+      html += `<div class="entry"><strong>55% 利润售价：</strong>${formatCurrency(prices["55%"])}</div>`;
       document.getElementById("priceSummary").innerHTML = html;
     }
 
-    document.getElementById("base_cost").addEventListener("input", (e) => {
+    document.getElementById("base_cost").addEventListener("blur", (e) => {
       const val = parseFloat(e.target.value.replace(/,/g, ''));
       if (!isNaN(val)) updateSalesPrices(val);
     });
