@@ -14,6 +14,8 @@
     .header-container {
       display: flex;
       justify-content: center;
+      margin: 0 auto;
+      max-width: 1000px;
       position: relative;
     }
     .header {
@@ -21,9 +23,8 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin: 10px auto 10px;
-      max-width: 1000px;
-      width: 100%;
+      margin: 10px auto;
+      flex-grow: 1;
     }
     .header img {
       height: 50px;
@@ -37,8 +38,9 @@
       font-size: 14px;
       cursor: pointer;
       position: absolute;
-      top: 0;
       right: 0;
+      top: 50%;
+      transform: translateY(-50%);
     }
     h2 {
       font-size: 18px;
@@ -169,35 +171,28 @@
   <script>
     const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
 
-    document.getElementById("currency").addEventListener("change", updateRMPrice);
-    document.getElementById("price").addEventListener("input", updateRMPrice);
+    const priceInput = document.getElementById("price");
+    const currencySelect = document.getElementById("currency");
+    const priceRMInput = document.getElementById("price_rm");
 
     function updateRMPrice() {
-      const currency = document.getElementById("currency").value;
-      const price = parseFloat(document.getElementById("price").value.replace(/,/g, ''));
-      const rate = rateMap[currency] || 1;
-      if (!isNaN(price)) {
-        const rm = price * rate;
-        document.getElementById("price_rm").value = rm.toLocaleString('en-MY', { minimumFractionDigits: 2 });
+      const raw = parseFloat(priceInput.value.replace(/,/g, ''));
+      const rate = rateMap[currencySelect.value];
+      if (!isNaN(raw) && rate) {
+        const rm = raw * rate;
+        priceRMInput.value = rm.toLocaleString('en-MY', { minimumFractionDigits: 2 });
+      } else {
+        priceRMInput.value = '';
       }
     }
 
-    const currencyInputIds = ['price', 'freight_fee', 'total_amount', 'local', 'moss', 'pot'];
-    currencyInputIds.forEach(id => {
-      const input = document.getElementById(id);
-      input.addEventListener('blur', () => {
-        const val = parseFloat(input.value.replace(/,/g, ''));
-        if (!isNaN(val)) {
-          input.value = val.toLocaleString('en-MY', { minimumFractionDigits: 2 });
-        }
-      });
-    });
+    priceInput.addEventListener('blur', updateRMPrice);
+    currencySelect.addEventListener('change', updateRMPrice);
 
-    function formatCurrency(val) {
-      return parseFloat(val).toLocaleString('en-MY', {
-        style: 'currency', currency: 'MYR', minimumFractionDigits: 2
-      }).replace('MYR', 'RM');
-    }
+    document.getElementById("base_cost").addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value.replace(/,/g, ''));
+      if (!isNaN(val)) updateSalesPrices(val);
+    });
 
     function updateSalesPrices(rmCost) {
       const prices = {
@@ -208,20 +203,13 @@
         "50%": rmCost * 2.00 * 1.12,
         "55%": rmCost * 2.23 * 1.12
       };
-      let html = `<div class="entry"><strong>实际成本：</strong>RM ${formatCurrency(rmCost)}</div>`;
-      html += `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>`;
-      html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>`;
-      html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>`;
-      html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>`;
-      html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>`;
-      html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>`;
+      let html = `<div class="entry"><strong>实际成本：</strong>RM ${rmCost.toFixed(2)}</div>`;
+      for (const p in prices) {
+        const style = p === "50%" ? "color:red;font-weight:bold;" : "";
+        html += `<div class="entry" style="${style}"><strong>${p} 利润售价：</strong>RM ${prices[p].toFixed(2)}</div>`;
+      }
       document.getElementById("priceSummary").innerHTML = html;
     }
-
-    document.getElementById("base_cost").addEventListener("input", (e) => {
-      const val = parseFloat(e.target.value.replace(/,/g, ''));
-      if (!isNaN(val)) updateSalesPrices(val);
-    });
 
     const inputs = document.querySelectorAll("input, textarea, select");
     inputs.forEach((el, i) => {
@@ -238,16 +226,13 @@
               el.value = date;
               el.classList.remove("error");
               el.setCustomValidity("");
-              let next = Array.from(inputs).slice(i + 1).find(x => !x.disabled);
+              const next = Array.from(inputs).slice(i + 1).find(x => !x.disabled);
               if (next) next.focus();
             } else {
               el.classList.add("error");
               el.setCustomValidity("请输入有效日期");
               el.reportValidity();
             }
-          } else {
-            let next = Array.from(inputs).slice(i + 1).find(x => !x.disabled);
-            if (next) next.focus();
           }
         }
       });
