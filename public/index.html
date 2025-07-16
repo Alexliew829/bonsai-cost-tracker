@@ -15,18 +15,15 @@
       display: flex;
       justify-content: center;
       position: relative;
-      margin-bottom: -20px;
     }
     .header {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
+      margin: 10px auto 10px;
       max-width: 1000px;
       width: 100%;
-      position: relative;
-      background: #f5f5f5;
-      z-index: 1;
     }
     .header img {
       height: 50px;
@@ -40,8 +37,8 @@
       font-size: 14px;
       cursor: pointer;
       position: absolute;
-      right: 0;
       top: 50%;
+      right: 0;
       transform: translateY(-50%);
     }
     h2 {
@@ -60,7 +57,6 @@
       grid-template-columns: 1fr 1fr;
       gap: 12px 20px;
       position: relative;
-      z-index: 0;
     }
     label {
       font-weight: bold;
@@ -80,12 +76,7 @@
       -webkit-appearance: none;
       margin: 0;
     }
-    input {
-      white-space: nowrap;
-    }
-    textarea {
-      resize: none;
-      overflow: hidden;
+    input, textarea {
       white-space: nowrap;
     }
     .full {
@@ -129,7 +120,7 @@
   <form id="bonsaiForm">
     <h2>🌱 盆栽资料</h2>
     <label>供应商</label><label>品种</label>
-    <input id="supplier" type="text" /><input id="variety" type="text" />
+    <input id="supplier" /><input id="variety" />
 
     <label>币值 + 单价（原币）+ 单价（RM）</label><label>数量（棵）</label>
     <div class="row3">
@@ -171,13 +162,13 @@
     <input id="local" inputmode="decimal" /><input id="moss" inputmode="decimal" />
 
     <label>花盆</label><label>原成本</label>
-    <input id="pot" inputmode="decimal" /><input id="base_cost" inputmode="decimal" />
+    <input id="pot" inputmode="decimal" /><input id="base_cost" disabled />
 
     <div id="priceSummary" class="full"></div>
   </form>
 
   <script>
-    const currencyInputIds = ['price', 'freight_fee', 'total_amount', 'local', 'moss', 'pot', 'base_cost'];
+    const currencyInputIds = ['price', 'freight_fee', 'total_amount', 'local', 'moss', 'pot'];
     currencyInputIds.forEach(id => {
       const input = document.getElementById(id);
       input.addEventListener('blur', () => {
@@ -201,31 +192,70 @@
         "40%": rmCost * 1.67 * 1.12,
         "45%": rmCost * 1.82 * 1.12,
         "50%": rmCost * 2.00 * 1.12,
-        "55%": rmCost * 2.23 * 1.12,
+        "55%": rmCost * 2.23 * 1.12
       };
-      let html = '';
-      html += `<div class="entry"><strong>实际成本：</strong>${formatCurrency(rmCost)}</div>`;
-      html += `<div class="entry"><strong>20% 利润售价：</strong>${formatCurrency(prices["20%"])}</div>`;
-      html += `<div class="entry"><strong>30% 利润售价：</strong>${formatCurrency(prices["30%"])}</div>`;
-      html += `<div class="entry"><strong>40% 利润售价：</strong>${formatCurrency(prices["40%"])}</div>`;
-      html += `<div class="entry"><strong>45% 利润售价：</strong>${formatCurrency(prices["45%"])}</div>`;
-      html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>${formatCurrency(prices["50%"])}</div>`;
-      html += `<div class="entry"><strong>55% 利润售价：</strong>${formatCurrency(prices["55%"])}</div>`;
+      let html = `<div class="entry"><strong>实际成本：</strong>RM ${formatCurrency(rmCost)}</div>`;
+      html += `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>`;
+      html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>`;
+      html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>`;
+      html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>`;
+      html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>`;
+      html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>`;
       document.getElementById("priceSummary").innerHTML = html;
     }
 
-    document.getElementById("base_cost").addEventListener("blur", (e) => {
+    document.getElementById("base_cost").addEventListener("input", (e) => {
       const val = parseFloat(e.target.value.replace(/,/g, ''));
       if (!isNaN(val)) updateSalesPrices(val);
     });
+
+    const currencySelect = document.getElementById("currency");
+    const priceInput = document.getElementById("price");
+    const priceRMInput = document.getElementById("price_rm");
+
+    function updatePriceRM() {
+      const currency = currencySelect.value;
+      const price = parseFloat(priceInput.value.replace(/,/g, ''));
+      const rates = {
+        CNY: 1.55,
+        VND: 1 / 0.00018,
+        NTD: 1 / 0.15,
+        IDR: 1 / 0.00028
+      };
+      if (!isNaN(price) && rates[currency]) {
+        const rmPrice = price * rates[currency];
+        priceRMInput.value = rmPrice.toLocaleString('en-MY', { minimumFractionDigits: 2 });
+      }
+    }
+    currencySelect.addEventListener("change", updatePriceRM);
+    priceInput.addEventListener("blur", updatePriceRM);
 
     const inputs = document.querySelectorAll("input, textarea, select");
     inputs.forEach((el, i) => {
       el.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
-          let next = Array.from(inputs).slice(i + 1).find(x => !x.disabled);
-          if (next) next.focus();
+          if (el.classList.contains("date-input")) {
+            const raw = el.value.replace(/\D/g, '');
+            if (/^(\d{6}|\d{8})$/.test(raw)) {
+              const y = raw.length === 6 ? '20' + raw.slice(4, 6) : raw.slice(4, 8);
+              const m = raw.slice(2, 4);
+              const d = raw.slice(0, 2);
+              const date = `${d}/${m}/${y}`;
+              el.value = date;
+              el.classList.remove("error");
+              el.setCustomValidity("");
+              let next = Array.from(inputs).slice(i + 1).find(x => !x.disabled);
+              if (next) next.focus();
+            } else {
+              el.classList.add("error");
+              el.setCustomValidity("请输入有效日期");
+              el.reportValidity();
+            }
+          } else {
+            let next = Array.from(inputs).slice(i + 1).find(x => !x.disabled);
+            if (next) next.focus();
+          }
         }
       });
     });
