@@ -132,7 +132,7 @@
 
     <label>发货总数</label><label>发货总金额（RM）</label>
     <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" />
-    <input id="total_amount" />
+    <input id="total_amount" disabled />
 
     <label>包装明细（木架，箱子）</label><label>抵达仓库日期</label>
     <input id="packing" type="number" inputmode="numeric" pattern="[0-9]*" />
@@ -174,6 +174,7 @@ function updateRM() {
   const rm = raw * rate;
   document.getElementById('price_rm').value = isNaN(rm) ? '' : formatCurrency(rm);
   updateSalesPrices(rm);
+  updateAutoFields(); // 加上自动联动
 }
 
 function updateSalesPrices(rmCost) {
@@ -219,6 +220,39 @@ function validateDate(input) {
   }
 }
 
+function updateAutoFields() {
+  // 自动计算：发货总金额 = 数量 × 单价RM
+  const qty = parseFloat(document.getElementById('total_plants').value || '0');
+  const priceRM = parseFloat(document.getElementById('price_rm').value.replace(/,/g, '') || '0');
+  const totalAmount = qty * priceRM;
+  if (!isNaN(totalAmount)) {
+    document.getElementById('total_amount').value = formatCurrency(totalAmount);
+  }
+
+  // 自动计算：天数 = 抵达 - 装柜
+  const getDate = id => {
+    const parts = document.getElementById(id).value.split('/');
+    if (parts.length !== 3) return null;
+    return new Date(`20${parts[2]}`, parts[1] - 1, parts[0]);
+  };
+  const d1 = getDate('container_date');
+  const d2 = getDate('arrival_date');
+  if (d1 && d2) {
+    const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+    if (!isNaN(diff)) {
+      document.getElementById('days').value = diff;
+    }
+  }
+
+  // 自动计算：运费比例 = 运费 ÷ 发货总金额
+  const freight = parseFloat(document.getElementById('freight_fee').value.replace(/,/g, '') || '0');
+  const totalAmt = parseFloat(document.getElementById('total_amount').value.replace(/,/g, '') || '0');
+  const ratio = totalAmt ? freight / totalAmt : 0;
+  if (!isNaN(ratio)) {
+    document.getElementById('freight_ratio').value = (ratio * 100).toFixed(2) + '%';
+  }
+}
+
 const fields = Array.from(document.querySelectorAll('input, select, textarea'));
 fields.forEach((el, i) => {
   el.addEventListener('keydown', e => {
@@ -235,7 +269,16 @@ fields.forEach((el, i) => {
     }
   });
   if (el.classList.contains('date-input')) {
-    el.addEventListener('blur', () => validateDate(el));
+    el.addEventListener('blur', () => {
+      validateDate(el);
+      updateAutoFields();
+    });
+  }
+  if (['freight_fee', 'total_plants'].includes(el.id)) {
+    el.addEventListener('input', updateAutoFields);
+  }
+  if (['shipment_id', 'price_rm'].includes(el.id)) {
+    el.addEventListener('input', updateAutoFields);
   }
   if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price') || ['local','moss','pot'].includes(el.id)) {
     el.addEventListener('blur', () => {
@@ -244,7 +287,6 @@ fields.forEach((el, i) => {
   }
 });
 
-// ✅ 处理 price（原币）输入逻辑，实时换算 RM，blur 后才格式化千位数
 const priceInput = document.getElementById('price');
 priceInput.addEventListener('input', () => {
   const raw = parseFloat(priceInput.value.replace(/,/g, ''));
@@ -260,8 +302,11 @@ priceInput.addEventListener('blur', () => {
 document.getElementById('currency').addEventListener('change', updateRM);
 
 function manualSave() {
-  alert("✅ 模拟：资料已储存（你可替换为真实上传逻辑）");
+  console.log("✅ 自动储存模拟：资料保存成功！");
 }
+
+// ✅ 每 3 分钟自动储存
+setInterval(manualSave, 3 * 60 * 1000);
 </script>
 </body>
 </html>
