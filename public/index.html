@@ -1,3 +1,4 @@
+<!-- 请将以下代码完整替换你的 index.html，确保一致性 -->
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -134,7 +135,7 @@
     <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" />
     <input id="total_amount" />
 
-    <label>包装明细</label><label>抵达仓库日期</label>
+    <label>包装明细（木架，箱子）</label><label>抵达仓库日期</label>
     <input id="packing" type="number" inputmode="numeric" pattern="[0-9]*" />
     <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" />
 
@@ -253,15 +254,17 @@ document.getElementById('price').addEventListener('focus', () => {
   el.value = el.value.replace(/,/g, '');
 });
 
+// ✅ 自动格式化本地运输、苔藓、花盆
+['local', 'moss', 'pot'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('blur', () => {
+    el.value = formatCurrency(el.value);
+  });
+});
+
 function manualSave() {
   alert("✅ 模拟：资料已储存（你可替换为真实上传逻辑）");
 }
-
-// 自动储存每2分钟（示意用）
-setInterval(() => {
-  console.log("⏳ 自动储存中...");
-  // manualSave(); // 如要自动上传到服务器，可调用此方法
-}, 2 * 60 * 1000);
 </script>
 </body>
 </html>
