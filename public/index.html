@@ -14,7 +14,7 @@
     .header {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       gap: 10px;
       margin-bottom: 10px;
     }
@@ -24,6 +24,11 @@
     .header h1 {
       font-size: 24px;
       margin: 0;
+    }
+    .save-btn {
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
     }
     h2 {
       font-size: 18px;
@@ -50,6 +55,8 @@
       padding: 6px 8px;
       font-size: 14px;
       box-sizing: border-box;
+      white-space: pre-wrap;
+      overflow: hidden;
     }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
@@ -58,10 +65,6 @@
     }
     .full {
       grid-column: 1 / -1;
-    }
-    .center-btn {
-      text-align: center;
-      margin-top: 20px;
     }
     .highlight {
       color: red;
@@ -91,8 +94,11 @@
 </head>
 <body>
   <div class="header">
-    <img src="logo.png" alt="logo">
-    <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <img src="logo.png" alt="logo">
+      <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
+    </div>
+    <button class="save-btn" onclick="manualSave()">📂 手动储存全部资料</button>
   </div>
 
   <form id="bonsaiForm">
@@ -130,7 +136,7 @@
 
     <label>抵达日期</label><label>运费（RM）</label>
     <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="freight_fee" type="number" inputmode="decimal" />
+    <input id="freight_fee" />
 
     <label>天数（自动）</label><label>比例（自动）</label>
     <input id="days" disabled /><input id="freight_ratio" disabled />
@@ -144,10 +150,6 @@
     <div id="priceSummary" class="full"></div>
   </form>
 
-  <div class="center-btn">
-    <button type="button">📂 手动储存全部资料</button>
-  </div>
-
 <script>
 const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
 
@@ -158,12 +160,11 @@ function formatCurrency(val) {
 
 function updateRM() {
   const cur = document.getElementById('currency').value;
-  const priceInput = document.getElementById('price');
-  const rawText = priceInput.value.replace(/,/g, '');
+  const rawText = document.getElementById('price').value.replace(/,/g, '');
   const raw = parseFloat(rawText);
   const rate = rateMap[cur] || 0;
   const rm = raw * rate;
-  if (!isNaN(raw)) priceInput.value = formatCurrency(raw);
+  if (!isNaN(raw)) document.getElementById('price').value = formatCurrency(raw);
   document.getElementById('price_rm').value = formatCurrency(rm);
   updateSalesPrices(rm);
 }
@@ -197,10 +198,8 @@ function validateDate(input) {
   } else if (raw.length === 6) {
     input.value = raw.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
   }
-
   const [d, m, y] = input.value.split('/').map(Number);
   const valid = d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 0 && y <= 99;
-
   if (!valid) {
     input.classList.add('error');
     input.setCustomValidity('请输入有效日期');
@@ -220,6 +219,7 @@ fields.forEach((el, i) => {
       if (el.validationMessage) return el.reportValidity();
       if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price') || el.id === 'local' || el.id === 'moss' || el.id === 'pot') {
         el.value = formatCurrency(el.value);
+        if (el.id === 'price') updateRM();
       }
       let next = i + 1;
       while (next < fields.length && (fields[next].disabled || fields[next].type === 'hidden')) next++;
@@ -232,6 +232,7 @@ fields.forEach((el, i) => {
   if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price') || el.id === 'local' || el.id === 'moss' || el.id === 'pot') {
     el.addEventListener('blur', () => {
       el.value = formatCurrency(el.value);
+      if (el.id === 'price') updateRM();
     });
   }
 });
@@ -242,6 +243,13 @@ document.getElementById('price').addEventListener('focus', () => {
   const el = document.getElementById('price');
   el.value = el.value.replace(/,/g, '');
 });
+
+function manualSave() {
+  alert("✅ 模拟储存成功！");
+}
+setInterval(() => {
+  manualSave();
+}, 120000);
 </script>
 </body>
 </html>
