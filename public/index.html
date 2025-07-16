@@ -258,42 +258,9 @@ priceInput.addEventListener('blur', () => {
 });
 
 document.getElementById('currency').addEventListener('change', updateRM);
-async function manualSave() {
-  const data = {
-    supplier: document.getElementById('supplier').value.trim(),
-    variety: document.getElementById('variety').value.trim(),
-    currency: document.getElementById('currency').value,
-    price: document.getElementById('price').value.trim(),
-    price_rm: document.getElementById('price_rm').value.trim(),
-    quantity: document.getElementById('quantity').value.trim(),
-    pot: document.getElementById('pot').value.trim(),
-    moss: document.getElementById('moss').value.trim(),
-    local: document.getElementById('local').value.trim(),
-    total_cost: '', // 自动计算结果
-    timestamp: new Date().toISOString()
-  };
 
-  const p = parseFloat(data.price_rm.replace(/,/g, '')) || 0;
-  const pot = parseFloat(data.pot.replace(/,/g, '')) || 0;
-  const moss = parseFloat(data.moss.replace(/,/g, '')) || 0;
-  const local = parseFloat(data.local.replace(/,/g, '')) || 0;
-  const qty = parseFloat(data.quantity.replace(/,/g, '')) || 0;
-  data.total_cost = ((p + pot + moss + local) * qty).toFixed(2);
-
-  try {
-    const res = await fetch('/api/saveBonsai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-
-    if (res.ok) {
-      console.log('✅ 储存成功');
-    } else {
-      console.error('❌ 储存失败');
-    }
-  } catch (err) {
-    console.error('❌ 储存失败', err);
+function manualSave() {
+  alert("✅ 模拟：资料已储存（你可替换为真实上传逻辑）");
 }
 </script>
 </body>
