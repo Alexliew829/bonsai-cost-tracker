@@ -114,7 +114,7 @@
         <option value="NTD">NTD</option>
         <option value="IDR">IDR</option>
       </select>
-      <input id="price" type="text" inputmode="decimal" />
+      <input id="price" type="text" inputmode="decimal" onfocus="this.select()" />
       <input id="price_rm" disabled />
     </div>
     <input id="quantity" type="number" inputmode="numeric" />
@@ -238,10 +238,15 @@ fields.forEach((el, i) => {
 });
 
 document.getElementById('currency').addEventListener('change', updateRM);
-document.getElementById('price').addEventListener('input', updateRM);
+document.getElementById('price').addEventListener('input', () => {
+  const el = document.getElementById('price');
+  el.value = el.value.replace(/[^\d.]/g, '');
+});
+document.getElementById('price').addEventListener('blur', updateRM);
+
 document.getElementById('price').addEventListener('focus', () => {
   const el = document.getElementById('price');
-  el.value = el.value.replace(/,/g, '');
+  el.select();
 });
 
 function manualSave() {
