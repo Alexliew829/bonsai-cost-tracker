@@ -5,25 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>盆栽成本记录系统 Lover Legend Gardening</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 20px;
-    }
     .header-container {
       display: flex;
       justify-content: center;
       position: relative;
+      max-width: 1000px;
+      margin: auto;
     }
     .header {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin: 10px auto 10px;
-      max-width: 1000px;
+      margin: 10px auto;
       width: 100%;
+      position: relative;
     }
     .header img {
       height: 50px;
@@ -37,73 +33,18 @@
       font-size: 14px;
       cursor: pointer;
       position: absolute;
-      right: 0;
+      right: 10px;
       top: 10px;
     }
-    h2 {
-      font-size: 18px;
-      text-align: center;
-      margin: 5px 0 15px;
-      grid-column: 1 / -1;
-    }
-    form {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
+    #bonsaiForm {
       max-width: 1000px;
       margin: auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px 20px;
-      position: relative;
-    }
-    label {
-      font-weight: bold;
-      font-size: 14px;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 6px 8px;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-    input:focus, textarea:focus {
-      outline: 2px solid #ccc;
-    }
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    input, textarea {
-      white-space: nowrap;
-    }
-    .full {
-      grid-column: 1 / -1;
-    }
-    .highlight {
-      color: red;
-      font-weight: bold;
-    }
-    .error {
-      border: 2px solid red !important;
-      background-color: #ffe6e6 !important;
-    }
-    .url-link {
-      color: blue;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-    .row3 {
-      display: flex;
-      gap: 6px;
-    }
-    .row3 > * {
-      flex: 1;
+      padding: 20px;
+      background: white;
     }
     .entry {
+      margin-bottom: 8px;
       font-size: 16px;
-      margin-top: 4px;
     }
   </style>
 </head>
@@ -117,71 +58,15 @@
   </div>
 
   <form id="bonsaiForm">
-    <h2>🌱 盆栽资料</h2>
-    <label>供应商</label><label>品种</label>
-    <input id="supplier" /><input id="variety" />
-
-    <label>币值 + 单价（原币）+ 单价（RM）</label><label>数量（棵）</label>
-    <div class="row3">
-      <select id="currency">
-        <option value="CNY">CNY</option>
-        <option value="VND">VND</option>
-        <option value="NTD">NTD</option>
-        <option value="IDR">IDR</option>
-      </select>
-      <input id="price" type="text" inputmode="decimal" />
-      <input id="price_rm" disabled />
-    </div>
-    <input id="quantity" type="number" inputmode="numeric" />
-
-    <label>图片网址</label><label>发货单号</label>
-    <textarea id="image_url" rows="1" class="url-link" onclick="if(this.value.startsWith('http')) window.open(this.value)"></textarea>
-    <textarea id="shipment_id" rows="1"></textarea>
-
-    <label>发货总数</label><label>发货总金额（RM）</label>
-    <input id="total_plants" type="number" inputmode="numeric" />
-    <input id="total_amount" inputmode="decimal" />
-
-    <label>包装明细（木架、箱子）</label><label>抵达仓库日期</label>
-    <input id="packing" type="number" inputmode="numeric" />
-    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" />
-
-    <label>装柜日期</label><label>海运单号</label>
-    <input id="container_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="shipping_no" />
-
-    <label>抵达日期</label><label>运费（RM）</label>
-    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="freight_fee" inputmode="decimal" />
-
-    <label>天数（自动）</label><label>比例（自动）</label>
-    <input id="days" disabled /><input id="freight_ratio" disabled />
-
-    <label>本地运输</label><label>苔藓</label>
-    <input id="local" inputmode="decimal" /><input id="moss" inputmode="decimal" />
-
-    <label>花盆</label><label>原成本</label>
-    <input id="pot" inputmode="decimal" /><input id="base_cost" disabled />
-
+    <!-- 利润售价显示区域 -->
     <div id="priceSummary" class="full"></div>
   </form>
 
   <script>
-    const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
-
-    const currencyInputIds = ['price', 'freight_fee', 'total_amount', 'local', 'moss', 'pot'];
-    currencyInputIds.forEach(id => {
-      const input = document.getElementById(id);
-      input.addEventListener('blur', () => {
-        const val = parseFloat(input.value.replace(/,/g, ''));
-        if (!isNaN(val)) {
-          input.value = val.toLocaleString('en-MY', { minimumFractionDigits: 2 });
-        }
-      });
-    });
-
     function formatCurrency(val) {
-      return parseFloat(val).toLocaleString('en-MY', {
+      const num = parseFloat(val);
+      if (isNaN(num)) return '-';
+      return num.toLocaleString('en-MY', {
         style: 'currency', currency: 'MYR', minimumFractionDigits: 2
       }).replace('MYR', 'RM');
     }
@@ -205,42 +90,12 @@
       document.getElementById("priceSummary").innerHTML = html;
     }
 
-    document.getElementById("base_cost").addEventListener("input", (e) => {
-      const val = parseFloat(e.target.value.replace(/,/g, ''));
-      if (!isNaN(val)) updateSalesPrices(val);
-    });
+    // ✅ 页面载入时自动测试显示
+    updateSalesPrices(1000); // 可改为表单实时计算
 
-    const inputs = document.querySelectorAll("input, textarea, select");
-    inputs.forEach((el, i) => {
-      el.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          if (el.classList.contains("date-input")) {
-            const raw = el.value.replace(/\D/g, '');
-            let valid = false;
-            if (/^\d{6}$/.test(raw) || /^\d{8}$/.test(raw)) {
-              let d = raw.slice(0, 2);
-              let m = raw.slice(2, 4);
-              let y = raw.length === 6 ? '20' + raw.slice(4, 6) : raw.slice(4, 8);
-              if (parseInt(d) >= 1 && parseInt(d) <= 31 && parseInt(m) >= 1 && parseInt(m) <= 12) {
-                el.value = `${d}/${m}/${y}`;
-                el.classList.remove("error");
-                el.setCustomValidity("");
-                valid = true;
-              }
-            }
-            if (!valid) {
-              el.classList.add("error");
-              el.setCustomValidity("请输入有效日期");
-              el.reportValidity();
-              return;
-            }
-          }
-          let next = Array.from(inputs).slice(i + 1).find(x => !x.disabled);
-          if (next) next.focus();
-        }
-      });
-    });
+    function manualSave() {
+      alert("📝 模拟储存成功（待开发完整功能）");
+    }
   </script>
 </body>
 </html>
