@@ -50,29 +50,6 @@
       padding: 6px 8px;
       font-size: 14px;
       box-sizing: border-box;
-      white-space: pre-wrap;
-      overflow: hidden;
-    }
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .full {
-      grid-column: 1 / -1;
-    }
-    .highlight {
-      color: red;
-      font-weight: bold;
-    }
-    .error {
-      border: 2px solid red !important;
-      background-color: #ffe6e6 !important;
-    }
-    .url-link {
-      color: blue;
-      text-decoration: underline;
-      cursor: pointer;
     }
     .row3 {
       display: flex;
@@ -84,6 +61,9 @@
     .entry {
       font-size: 16px;
       margin-top: 4px;
+    }
+    .full {
+      grid-column: 1 / -1;
     }
     .top-bar {
       display: flex;
@@ -107,7 +87,7 @@
   <form id="bonsaiForm">
     <div class="top-bar">
       <h2>🌱 盆栽资料</h2>
-      <button type="button" onclick="manualSave()">📂 手动储存全部资料</button>
+      <button type="button" onclick="manualSave()">📂 手动储存</button>
     </div>
 
     <label>供应商</label><label>品种</label>
@@ -121,230 +101,93 @@
         <option value="NTD">NTD</option>
         <option value="IDR">IDR</option>
       </select>
-      <input id="price" type="text" inputmode="decimal" value="" />
+      <input id="price" type="text" inputmode="decimal" />
       <input id="price_rm" disabled />
     </div>
-    <input id="quantity" type="number" inputmode="numeric" pattern="[0-9]*" />
+    <input id="quantity" type="number" />
 
-    <label>图片网址</label><label>发货单号</label>
-    <input id="image_url" type="url" class="url-link" onclick="if(this.value.startsWith('http')) window.open(this.value)" />
-    <input id="shipment_id" />
+    <label>花盆</label><label>苔藓</label>
+    <input id="pot" type="text" /><input id="moss" type="text" />
 
-    <label>发货总数</label><label>发货总金额（RM）</label>
-    <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" />
-    <input id="total_amount" disabled />
-
-    <label>包装明细（木架，箱子）</label><label>抵达仓库日期</label>
-    <input id="packing" type="number" inputmode="numeric" pattern="[0-9]*" />
-    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" />
-
-    <label>装柜日期</label><label>海运单号</label>
-    <input id="container_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="shipping_no" />
-
-    <label>抵达日期</label><label>运费（RM）</label>
-    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="freight_fee" />
-
-    <label>天数（自动）</label><label>运费比例（自动）</label>
-    <input id="days" disabled /><input id="freight_ratio" disabled />
-
-    <label>本地运输</label><label>苔藓</label>
-    <input id="local" /><input id="moss" />
-
-    <label>花盆</label><label>原成本</label>
-    <input id="pot" /><input id="base_cost" disabled />
+    <label>本地运输</label><label>总成本（自动）</label>
+    <input id="transport" type="text" /><input id="total_cost" disabled />
 
     <div id="priceSummary" class="full"></div>
   </form>
 
-<script>
-const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-function formatCurrency(val) {
-  const num = parseFloat(val.toString().replace(/,/g, ''));
-  return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+    const firebaseConfig = {
+      projectId: "bonsai-live-system"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-function updateRM() {
-  const cur = document.getElementById('currency').value;
-  const rawText = document.getElementById('price').value.replace(/,/g, '');
-  const raw = parseFloat(rawText);
-  const rate = rateMap[cur] || 0;
-  const rm = raw * rate;
-  document.getElementById('price_rm').value = isNaN(rm) ? '' : formatCurrency(rm);
-  updateSalesPrices(rm);
-  updateAutoFields(); // 加上自动联动
-}
+    const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
 
-function updateSalesPrices(rmCost) {
-  const prices = {
-    "20%": rmCost * 1.26 * 1.12,
-    "30%": rmCost * 1.43 * 1.12,
-    "40%": rmCost * 1.67 * 1.12,
-    "45%": rmCost * 1.82 * 1.12,
-    "50%": rmCost * 2.00 * 1.12,
-    "55%": rmCost * 2.23 * 1.12
-  };
-  let html = `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>`;
-  html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>`;
-  html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>`;
-  html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>`;
-  html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>`;
-  html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>`;
-  document.getElementById('priceSummary').innerHTML = html;
-}
-
-function validateDate(input) {
-  const raw = input.value.replace(/[^0-9]/g, '');
-  if (!input.value) {
-    const now = new Date();
-    const dd = String(now.getDate()).padStart(2, '0');
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const yy = String(now.getFullYear()).slice(2);
-    input.value = `${dd}/${mm}/${yy}`;
-  } else if (raw.length === 6) {
-    input.value = raw.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
-  }
-
-  const [d, m, y] = input.value.split('/').map(Number);
-  const valid = d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 0 && y <= 99;
-
-  if (!valid) {
-    input.classList.add('error');
-    input.setCustomValidity('请输入有效日期');
-    input.reportValidity();
-  } else {
-    input.classList.remove('error');
-    input.setCustomValidity('');
-  }
-}
-
-function updateAutoFields() {
-  // 自动计算：发货总金额 = 数量 × 单价RM
-  const qty = parseFloat(document.getElementById('total_plants').value || '0');
-  const priceRM = parseFloat(document.getElementById('price_rm').value.replace(/,/g, '') || '0');
-  const totalAmount = qty * priceRM;
-  if (!isNaN(totalAmount)) {
-    document.getElementById('total_amount').value = formatCurrency(totalAmount);
-  }
-
-  // 自动计算：天数 = 抵达 - 装柜
-  const getDate = id => {
-    const parts = document.getElementById(id).value.split('/');
-    if (parts.length !== 3) return null;
-    return new Date(`20${parts[2]}`, parts[1] - 1, parts[0]);
-  };
-  const d1 = getDate('container_date');
-  const d2 = getDate('arrival_date');
-  if (d1 && d2) {
-    const diff = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-    if (!isNaN(diff)) {
-      document.getElementById('days').value = diff;
+    function format(val) {
+      const num = parseFloat(val.toString().replace(/,/g, ''));
+      return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2 });
     }
-  }
 
-  // 自动计算：运费比例 = 运费 ÷ 发货总金额
-  const freight = parseFloat(document.getElementById('freight_fee').value.replace(/,/g, '') || '0');
-  const totalAmt = parseFloat(document.getElementById('total_amount').value.replace(/,/g, '') || '0');
-  const ratio = totalAmt ? freight / totalAmt : 0;
-  if (!isNaN(ratio)) {
-    document.getElementById('freight_ratio').value = (ratio * 100).toFixed(2) + '%';
-  }
-}
+    function calcCost() {
+      const rm = parseFloat(document.getElementById('price_rm').value.replace(/,/g, '') || '0');
+      const qty = parseFloat(document.getElementById('quantity').value || '0');
+      const pot = parseFloat(document.getElementById('pot').value.replace(/,/g, '') || '0');
+      const moss = parseFloat(document.getElementById('moss').value.replace(/,/g, '') || '0');
+      const local = parseFloat(document.getElementById('transport').value.replace(/,/g, '') || '0');
+      const base = rm * qty;
+      const total = base + pot + moss + local;
+      document.getElementById('total_cost').value = format(total);
 
-const fields = Array.from(document.querySelectorAll('input, select, textarea'));
-fields.forEach((el, i) => {
-  el.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (el.classList.contains('date-input')) validateDate(el);
-      if (el.validationMessage) return el.reportValidity();
-      if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price') || ['local','moss','pot'].includes(el.id)) {
-        el.value = formatCurrency(el.value);
+      const prices = {
+        "20%": total * 1.2,
+        "30%": total * 1.3,
+        "40%": total * 1.4,
+        "50%": total * 1.5,
+        "55%": total * 1.55
+      };
+      let html = '';
+      for (let k of ["20%", "30%", "40%", "50%", "55%"])
+        html += `<div class="entry"><strong>${k} 利润售价：</strong>RM ${format(prices[k])}</div>`;
+      document.getElementById('priceSummary').innerHTML = html;
+    }
+
+    document.querySelectorAll('#price, #quantity, #pot, #moss, #transport').forEach(el => el.addEventListener('input', calcCost));
+    document.getElementById('currency').addEventListener('change', () => {
+      const cur = document.getElementById('currency').value;
+      const raw = parseFloat(document.getElementById('price').value.replace(/,/g, '') || '0');
+      const rate = rateMap[cur] || 0;
+      const rm = raw * rate;
+      document.getElementById('price_rm').value = format(rm);
+      calcCost();
+    });
+
+    async function manualSave() {
+      const data = {
+        supplier: document.getElementById('supplier').value,
+        variety: document.getElementById('variety').value,
+        currency: document.getElementById('currency').value,
+        price: document.getElementById('price').value,
+        price_rm: document.getElementById('price_rm').value,
+        quantity: document.getElementById('quantity').value,
+        pot: document.getElementById('pot').value,
+        moss: document.getElementById('moss').value,
+        transport: document.getElementById('transport').value,
+        total_cost: document.getElementById('total_cost').value,
+        timestamp: new Date().toISOString()
+      };
+      try {
+        await addDoc(collection(db, 'bonsai_records'), data);
+        console.log('✅ 储存成功');
+      } catch (err) {
+        console.error('❌ 储存失败', err);
       }
-      let next = i + 1;
-      while (next < fields.length && (fields[next].disabled || fields[next].type === 'hidden')) next++;
-      if (fields[next]) fields[next].focus();
     }
-  });
-  if (el.classList.contains('date-input')) {
-    el.addEventListener('blur', () => {
-      validateDate(el);
-      updateAutoFields();
-    });
-  }
-  if (['freight_fee', 'total_plants'].includes(el.id)) {
-    el.addEventListener('input', updateAutoFields);
-  }
-  if (['shipment_id', 'price_rm'].includes(el.id)) {
-    el.addEventListener('input', updateAutoFields);
-  }
-  if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price') || ['local','moss','pot'].includes(el.id)) {
-    el.addEventListener('blur', () => {
-      el.value = formatCurrency(el.value);
-    });
-  }
-});
 
-const priceInput = document.getElementById('price');
-priceInput.addEventListener('input', () => {
-  const raw = parseFloat(priceInput.value.replace(/,/g, ''));
-  const rate = rateMap[document.getElementById('currency').value] || 0;
-  const rm = raw * rate;
-  document.getElementById('price_rm').value = isNaN(rm) ? '' : formatCurrency(rm);
-});
-priceInput.addEventListener('blur', () => {
-  priceInput.value = formatCurrency(priceInput.value);
-  updateRM();
-});
-
-document.getElementById('currency').addEventListener('change', updateRM);
-
-function manualSave() {
-  const data = {
-    supplier: document.getElementById('supplier').value,
-    variety: document.getElementById('variety').value,
-    currency: document.getElementById('currency').value,
-    price: document.getElementById('price').value,
-    price_rm: document.getElementById('price_rm').value,
-    quantity: document.getElementById('quantity').value,
-    image_url: document.getElementById('image_url').value,
-    shipment_id: document.getElementById('shipment_id').value,
-    total_plants: document.getElementById('total_plants').value,
-    total_amount: document.getElementById('total_amount').value,
-    packing: document.getElementById('packing').value,
-    warehouse_date: document.getElementById('warehouse_date').value,
-    container_date: document.getElementById('container_date').value,
-    shipping_no: document.getElementById('shipping_no').value,
-    arrival_date: document.getElementById('arrival_date').value,
-    freight_fee: document.getElementById('freight_fee').value,
-    days: document.getElementById('days').value,
-    freight_ratio: document.getElementById('freight_ratio').value,
-    local: document.getElementById('local').value,
-    moss: document.getElementById('moss').value,
-    pot: document.getElementById('pot').value,
-    base_cost: document.getElementById('base_cost').value,
-    timestamp: new Date().toISOString()
-  };
-
-  fetch('/api/saveBonsai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  }).then(res => {
-    if (res.ok) {
-      console.log('✅ 自动储存成功');
-    } else {
-      console.error('❌ 自动储存失败');
-    }
-  }).catch(err => {
-    console.error('❌ 自动储存失败', err);
-  });
-}
-
-// ✅ 每 3 分钟自动储存
-setInterval(manualSave, 3 * 60 * 1000);
-</script>
+    setInterval(manualSave, 180000);
+  </script>
 </body>
 </html>
