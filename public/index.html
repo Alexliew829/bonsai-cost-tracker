@@ -14,14 +14,16 @@
     .header-container {
       display: flex;
       justify-content: center;
-      position: relative;
     }
     .header {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 0;
+      position: relative;
+      width: 100%;
+      max-width: 1000px;
     }
     .header img {
       height: 50px;
@@ -29,6 +31,8 @@
     .header h1 {
       font-size: 24px;
       margin: 0;
+      flex: 1;
+      text-align: center;
     }
     .save-btn {
       padding: 6px 12px;
@@ -36,8 +40,8 @@
       cursor: pointer;
       position: absolute;
       right: 0;
-      top: 20px;
-      transform: translateY(0);
+      top: 50%;
+      transform: translateY(-50%);
     }
     h2 {
       font-size: 18px;
@@ -72,6 +76,9 @@
     input[type=number]::-webkit-outer-spin-button {
       -webkit-appearance: none;
       margin: 0;
+    }
+    input:focus, textarea:focus {
+      outline: 2px solid #007BFF;
     }
     .full {
       grid-column: 1 / -1;
@@ -124,7 +131,7 @@
         <option value="NTD">NTD</option>
         <option value="IDR">IDR</option>
       </select>
-      <input id="price" type="text" inputmode="decimal" />
+      <input id="price" type="text" inputmode="decimal" oninput="formatCurrency(this, false)" />
       <input id="price_rm" disabled />
     </div>
     <input id="quantity" type="number" inputmode="numeric" />
@@ -135,7 +142,7 @@
 
     <label>发货总数</label><label>发货总金额（RM）</label>
     <input id="total_plants" type="number" inputmode="numeric" />
-    <input id="total_amount" inputmode="decimal" />
+    <input id="total_amount" inputmode="decimal" oninput="formatCurrency(this)" />
 
     <label>包装明细（木架、箱子）</label><label>抵达仓库日期</label>
     <input id="packing" type="number" inputmode="numeric" />
@@ -147,18 +154,49 @@
 
     <label>抵达日期</label><label>运费（RM）</label>
     <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="freight_fee" inputmode="decimal" />
+    <input id="freight_fee" inputmode="decimal" oninput="formatCurrency(this)" />
 
     <label>天数（自动）</label><label>比例（自动）</label>
     <input id="days" disabled /><input id="freight_ratio" disabled />
 
     <label>本地运输</label><label>苔藓</label>
-    <input id="local" type="number" inputmode="decimal" /><input id="moss" type="number" inputmode="decimal" />
+    <input id="local" type="text" inputmode="decimal" oninput="formatCurrency(this)" />
+    <input id="moss" type="text" inputmode="decimal" oninput="formatCurrency(this)" />
 
     <label>花盆</label><label>原成本</label>
-    <input id="pot" type="number" inputmode="decimal" /><input id="base_cost" disabled />
+    <input id="pot" type="text" inputmode="decimal" oninput="formatCurrency(this)" />
+    <input id="base_cost" disabled />
 
     <div id="priceSummary" class="full"></div>
   </form>
+
+  <script>
+    function formatCurrency(input, allowEmpty = true) {
+      let value = input.value.replace(/[^\d.]/g, '');
+      if (!value && allowEmpty) return;
+      const num = parseFloat(value);
+      if (!isNaN(num)) {
+        input.value = num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    }
+
+    function updateSalesPrices(rmCost) {
+      const prices = {
+        "20%": rmCost * 1.26 * 1.12,
+        "30%": rmCost * 1.43 * 1.12,
+        "40%": rmCost * 1.67 * 1.12,
+        "45%": rmCost * 1.82 * 1.12,
+        "50%": rmCost * 2.00 * 1.12,
+        "55%": rmCost * 2.23 * 1.12
+      };
+      let html = `<div class="entry"><strong>20% 利润售价：</strong>RM ${prices["20%"].toFixed(2)}</div>`;
+      html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${prices["30%"].toFixed(2)}</div>`;
+      html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${prices["40%"].toFixed(2)}</div>`;
+      html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${prices["45%"].toFixed(2)}</div>`;
+      html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${prices["50%"].toFixed(2)}</div>`;
+      html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${prices["55%"].toFixed(2)}</div>`;
+      document.getElementById("priceSummary").innerHTML = html;
+    }
+  </script>
 </body>
 </html>
