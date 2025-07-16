@@ -302,7 +302,45 @@ priceInput.addEventListener('blur', () => {
 document.getElementById('currency').addEventListener('change', updateRM);
 
 function manualSave() {
-  console.log("✅ 自动储存模拟：资料保存成功！");
+  const data = {
+    supplier: document.getElementById('supplier').value,
+    variety: document.getElementById('variety').value,
+    currency: document.getElementById('currency').value,
+    price: document.getElementById('price').value,
+    price_rm: document.getElementById('price_rm').value,
+    quantity: document.getElementById('quantity').value,
+    image_url: document.getElementById('image_url').value,
+    shipment_id: document.getElementById('shipment_id').value,
+    total_plants: document.getElementById('total_plants').value,
+    total_amount: document.getElementById('total_amount').value,
+    packing: document.getElementById('packing').value,
+    warehouse_date: document.getElementById('warehouse_date').value,
+    container_date: document.getElementById('container_date').value,
+    shipping_no: document.getElementById('shipping_no').value,
+    arrival_date: document.getElementById('arrival_date').value,
+    freight_fee: document.getElementById('freight_fee').value,
+    days: document.getElementById('days').value,
+    freight_ratio: document.getElementById('freight_ratio').value,
+    local: document.getElementById('local').value,
+    moss: document.getElementById('moss').value,
+    pot: document.getElementById('pot').value,
+    base_cost: document.getElementById('base_cost').value,
+    timestamp: new Date().toISOString()
+  };
+
+  fetch('/api/saveBonsai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).then(res => {
+    if (res.ok) {
+      console.log('✅ 自动储存成功');
+    } else {
+      console.error('❌ 自动储存失败');
+    }
+  }).catch(err => {
+    console.error('❌ 自动储存失败', err);
+  });
 }
 
 // ✅ 每 3 分钟自动储存
