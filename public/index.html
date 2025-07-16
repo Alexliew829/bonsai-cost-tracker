@@ -14,16 +14,14 @@
     .header-container {
       display: flex;
       justify-content: center;
+      position: relative;
     }
     .header {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      margin-bottom: 0;
-      position: relative;
-      width: 100%;
-      max-width: 1000px;
+      margin-bottom: 10px;
     }
     .header img {
       height: 50px;
@@ -31,8 +29,6 @@
     .header h1 {
       font-size: 24px;
       margin: 0;
-      flex: 1;
-      text-align: center;
     }
     .save-btn {
       padding: 6px 12px;
@@ -40,8 +36,8 @@
       cursor: pointer;
       position: absolute;
       right: 0;
-      top: 50%;
-      transform: translateY(-50%);
+      top: 0;
+      transform: translateY(0);
     }
     h2 {
       font-size: 18px;
@@ -76,9 +72,6 @@
     input[type=number]::-webkit-outer-spin-button {
       -webkit-appearance: none;
       margin: 0;
-    }
-    input:focus, textarea:focus {
-      outline: 2px solid #007BFF;
     }
     .full {
       grid-column: 1 / -1;
@@ -121,7 +114,7 @@
   <form id="bonsaiForm">
     <h2>🌱 盆栽资料</h2>
     <label>供应商</label><label>品种</label>
-    <input id="supplier" /><input id="variety" />
+    <textarea id="supplier"></textarea><textarea id="variety"></textarea>
 
     <label>币值 + 单价（原币）+ 单价（RM）</label><label>数量（棵）</label>
     <div class="row3">
@@ -131,18 +124,18 @@
         <option value="NTD">NTD</option>
         <option value="IDR">IDR</option>
       </select>
-      <input id="price" type="text" inputmode="decimal" oninput="formatCurrency(this, false)" />
+      <input id="price" type="text" inputmode="decimal" />
       <input id="price_rm" disabled />
     </div>
     <input id="quantity" type="number" inputmode="numeric" />
 
     <label>图片网址</label><label>发货单号</label>
-    <input id="image_url" type="url" class="url-link" onclick="if(this.value.startsWith('http')) window.open(this.value)" />
-    <input id="shipment_id" />
+    <textarea id="image_url" class="url-link" onclick="if(this.value.startsWith('http')) window.open(this.value)"></textarea>
+    <textarea id="shipment_id"></textarea>
 
     <label>发货总数</label><label>发货总金额（RM）</label>
     <input id="total_plants" type="number" inputmode="numeric" />
-    <input id="total_amount" inputmode="decimal" oninput="formatCurrency(this)" />
+    <input id="total_amount" inputmode="decimal" />
 
     <label>包装明细（木架、箱子）</label><label>抵达仓库日期</label>
     <input id="packing" type="number" inputmode="numeric" />
@@ -154,30 +147,25 @@
 
     <label>抵达日期</label><label>运费（RM）</label>
     <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="freight_fee" inputmode="decimal" oninput="formatCurrency(this)" />
+    <input id="freight_fee" inputmode="decimal" />
 
     <label>天数（自动）</label><label>比例（自动）</label>
     <input id="days" disabled /><input id="freight_ratio" disabled />
 
     <label>本地运输</label><label>苔藓</label>
-    <input id="local" type="text" inputmode="decimal" oninput="formatCurrency(this)" />
-    <input id="moss" type="text" inputmode="decimal" oninput="formatCurrency(this)" />
+    <input id="local" type="number" inputmode="decimal" /><input id="moss" type="number" inputmode="decimal" />
 
     <label>花盆</label><label>原成本</label>
-    <input id="pot" type="text" inputmode="decimal" oninput="formatCurrency(this)" />
-    <input id="base_cost" disabled />
+    <input id="pot" type="number" inputmode="decimal" /><input id="base_cost" disabled />
 
     <div id="priceSummary" class="full"></div>
   </form>
 
   <script>
-    function formatCurrency(input, allowEmpty = true) {
-      let value = input.value.replace(/[^\d.]/g, '');
-      if (!value && allowEmpty) return;
-      const num = parseFloat(value);
-      if (!isNaN(num)) {
-        input.value = num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      }
+    function formatCurrency(val) {
+      return parseFloat(val).toLocaleString('en-MY', {
+        style: 'currency', currency: 'MYR', minimumFractionDigits: 2
+      }).replace('MYR', 'RM');
     }
 
     function updateSalesPrices(rmCost) {
@@ -187,16 +175,21 @@
         "40%": rmCost * 1.67 * 1.12,
         "45%": rmCost * 1.82 * 1.12,
         "50%": rmCost * 2.00 * 1.12,
-        "55%": rmCost * 2.23 * 1.12
+        "55%": rmCost * 2.23 * 1.12,
       };
-      let html = `<div class="entry"><strong>20% 利润售价：</strong>RM ${prices["20%"].toFixed(2)}</div>`;
-      html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${prices["30%"].toFixed(2)}</div>`;
-      html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${prices["40%"].toFixed(2)}</div>`;
-      html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${prices["45%"].toFixed(2)}</div>`;
-      html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${prices["50%"].toFixed(2)}</div>`;
-      html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${prices["55%"].toFixed(2)}</div>`;
+      let html = `<div class="entry"><strong>实际成本：</strong>${formatCurrency(rmCost)}</div>`;
+      for (const [rate, value] of Object.entries(prices)) {
+        const color = rate === "50%" ? 'red' : 'inherit';
+        html += `<div class="entry" style="color:${color}"><strong>${rate} 利润售价：</strong>${formatCurrency(value)}</div>`;
+      }
       document.getElementById("priceSummary").innerHTML = html;
     }
+
+    // 示例：成本变化时自动更新售价
+    document.getElementById("base_cost").addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val)) updateSalesPrices(val);
+    });
   </script>
 </body>
 </html>
