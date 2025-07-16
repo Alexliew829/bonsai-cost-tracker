@@ -14,7 +14,8 @@
     .header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
+      position: relative;
       gap: 10px;
       margin-bottom: 10px;
     }
@@ -29,6 +30,9 @@
       padding: 6px 12px;
       font-size: 14px;
       cursor: pointer;
+      position: absolute;
+      right: 20px;
+      top: 0;
     }
     h2 {
       font-size: 18px;
@@ -45,6 +49,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px 20px;
+      position: relative;
     }
     label {
       font-weight: bold;
@@ -93,15 +98,13 @@
   </style>
 </head>
 <body>
-  <div class="header">
-    <div style="display: flex; align-items: center; gap: 10px;">
+  <form id="bonsaiForm">
+    <div class="header">
       <img src="logo.png" alt="logo">
       <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
+      <button class="save-btn" onclick="manualSave()">📂 手动储存全部资料</button>
     </div>
-    <button class="save-btn" onclick="manualSave()">📂 手动储存全部资料</button>
-  </div>
 
-  <form id="bonsaiForm">
     <h2>🌱 盆栽资料</h2>
     <label>供应商</label><label>品种</label>
     <input id="supplier" /><input id="variety" />
@@ -114,7 +117,7 @@
         <option value="NTD">NTD</option>
         <option value="IDR">IDR</option>
       </select>
-      <input id="price" type="text" inputmode="decimal" onfocus="this.select()" />
+      <input id="price" type="text" inputmode="decimal" />
       <input id="price_rm" disabled />
     </div>
     <input id="quantity" type="number" inputmode="numeric" />
@@ -149,112 +152,5 @@
 
     <div id="priceSummary" class="full"></div>
   </form>
-
-<script>
-const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
-
-function formatCurrency(val) {
-  const num = parseFloat(val.toString().replace(/,/g, ''));
-  return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function updateRM() {
-  const cur = document.getElementById('currency').value;
-  const rawText = document.getElementById('price').value.replace(/,/g, '');
-  const raw = parseFloat(rawText);
-  const rate = rateMap[cur] || 0;
-  const rm = raw * rate;
-  if (!isNaN(raw)) document.getElementById('price').value = formatCurrency(raw);
-  document.getElementById('price_rm').value = formatCurrency(rm);
-  updateSalesPrices(rm);
-}
-
-function updateSalesPrices(rmCost) {
-  const prices = {
-    "20%": rmCost * 1.26 * 1.12,
-    "30%": rmCost * 1.43 * 1.12,
-    "40%": rmCost * 1.67 * 1.12,
-    "45%": rmCost * 1.82 * 1.12,
-    "50%": rmCost * 2.00 * 1.12,
-    "55%": rmCost * 2.23 * 1.12
-  };
-  let html = `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>`;
-  html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>`;
-  html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>`;
-  html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>`;
-  html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>`;
-  html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>`;
-  document.getElementById('priceSummary').innerHTML = html;
-}
-
-function validateDate(input) {
-  const raw = input.value.replace(/[^0-9]/g, '');
-  if (!input.value) {
-    const now = new Date();
-    const dd = String(now.getDate()).padStart(2, '0');
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const yy = String(now.getFullYear()).slice(2);
-    input.value = `${dd}/${mm}/${yy}`;
-  } else if (raw.length === 6) {
-    input.value = raw.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
-  }
-  const [d, m, y] = input.value.split('/').map(Number);
-  const valid = d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 0 && y <= 99;
-  if (!valid) {
-    input.classList.add('error');
-    input.setCustomValidity('请输入有效日期');
-    input.reportValidity();
-  } else {
-    input.classList.remove('error');
-    input.setCustomValidity('');
-  }
-}
-
-const fields = Array.from(document.querySelectorAll('input, select, textarea'));
-fields.forEach((el, i) => {
-  el.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (el.classList.contains('date-input')) validateDate(el);
-      if (el.validationMessage) return el.reportValidity();
-      if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price') || el.id === 'local' || el.id === 'moss' || el.id === 'pot') {
-        el.value = formatCurrency(el.value);
-        if (el.id === 'price') updateRM();
-      }
-      let next = i + 1;
-      while (next < fields.length && (fields[next].disabled || fields[next].type === 'hidden')) next++;
-      if (fields[next]) fields[next].focus();
-    }
-  });
-  if (el.classList.contains('date-input')) {
-    el.addEventListener('blur', () => validateDate(el));
-  }
-  if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price') || el.id === 'local' || el.id === 'moss' || el.id === 'pot') {
-    el.addEventListener('blur', () => {
-      el.value = formatCurrency(el.value);
-      if (el.id === 'price') updateRM();
-    });
-  }
-});
-
-document.getElementById('currency').addEventListener('change', updateRM);
-document.getElementById('price').addEventListener('input', () => {
-  const el = document.getElementById('price');
-  el.value = el.value.replace(/[^\d.]/g, '');
-});
-document.getElementById('price').addEventListener('blur', updateRM);
-
-document.getElementById('price').addEventListener('focus', () => {
-  const el = document.getElementById('price');
-  el.select();
-});
-
-function manualSave() {
-  alert("✅ 模拟储存成功！");
-}
-setInterval(() => {
-  manualSave();
-}, 120000);
-</script>
 </body>
 </html>
