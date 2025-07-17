@@ -161,7 +161,6 @@
   </form>
 
 <script>
-// ⏱️ 汇率换算
 const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
 
 function formatCurrency(val) {
@@ -169,26 +168,20 @@ function formatCurrency(val) {
   return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function getRMPrice() {
-  const currency = document.getElementById("currency").value;
-  const raw = parseFloat(document.getElementById("price").value.replace(/,/g, ""));
-  const rate = rateMap[currency] || 0;
-  return raw * rate;
-}
-
-function updateRMFields() {
-  const rmPrice = getRMPrice();
-  document.getElementById("price_rm").value = formatCurrency(rmPrice);
-  const qty = parseFloat(document.getElementById("quantity").value) || 0;
-  const baseCost = rmPrice * qty;
-  document.getElementById("base_cost").value = formatCurrency(baseCost);
-
-  const totalPlants = parseFloat(document.getElementById("total_plants").value) || 0;
-  const totalAmount = totalPlants * rmPrice;
-  document.getElementById("total_amount").value = formatCurrency(totalAmount);
-
-  updateFreightRatio();
-  updateSalesPrices(baseCost);
+function validateDate(input) {
+  const raw = input.value.replace(/[^0-9]/g, '');
+  if (!input.value) return;
+  if (raw.length === 6) input.value = raw.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
+  const [d, m, y] = input.value.split('/').map(Number);
+  const valid = d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 0 && y <= 99;
+  if (!valid) {
+    input.classList.add('error');
+    input.setCustomValidity('请输入有效日期');
+    input.reportValidity();
+  } else {
+    input.classList.remove('error');
+    input.setCustomValidity('');
+  }
 }
 
 function updateSalesPrices(baseCost) {
@@ -208,9 +201,24 @@ function updateSalesPrices(baseCost) {
   document.getElementById("priceSummary").innerHTML = html;
 }
 
+function updateRMFields() {
+  const currency = document.getElementById("currency").value;
+  const raw = parseFloat(document.getElementById("price").value.replace(/,/g, ''));
+  const rate = rateMap[currency] || 0;
+  const rm = raw * rate;
+  document.getElementById("price_rm").value = formatCurrency(rm);
+  const qty = parseFloat(document.getElementById("quantity").value) || 0;
+  const base = rm * qty;
+  document.getElementById("base_cost").value = formatCurrency(base);
+  const totalQty = parseFloat(document.getElementById("total_plants").value) || 0;
+  document.getElementById("total_amount").value = formatCurrency(totalQty * rm);
+  updateSalesPrices(base);
+  updateFreightRatio();
+}
+
 function updateFreightRatio() {
-  const freight = parseFloat(document.getElementById("freight_fee").value.replace(/,/g, "")) || 0;
-  const total = parseFloat(document.getElementById("total_amount").value.replace(/,/g, "")) || 0;
+  const freight = parseFloat(document.getElementById("freight_fee").value.replace(/,/g, '')) || 0;
+  const total = parseFloat(document.getElementById("total_amount").value.replace(/,/g, '')) || 0;
   const ratio = total ? freight / total : 0;
   document.getElementById("freight_ratio").value = `${(ratio * 100).toFixed(2)}%`;
 }
@@ -229,80 +237,36 @@ function calculateDays() {
 }
 
 function manualSave() {
-  const fields = [
-    "supplier", "variety", "currency", "price", "price_rm", "quantity",
-    "image_url", "shipment_id", "total_plants", "total_amount",
-    "packing", "warehouse_date", "container_date", "shipping_no",
-    "arrival_date", "freight_fee", "days", "freight_ratio",
-    "local", "moss", "pot", "base_cost"
-  ];
+  const fields = document.querySelectorAll("input, select");
   const data = {};
-  fields.forEach(id => data[id] = document.getElementById(id).value);
-  console.log("📦 储存数据：", data);
-  saveHistory("suppliers", data.supplier);
-  saveHistory("varieties", data.variety);
+  fields.forEach(f => data[f.id] = f.value);
+  console.log("储存数据：", data);
 }
 
-function saveHistory(listId, value) {
-  if (!value) return;
-  const key = `history_${listId}`;
-  let existing = JSON.parse(localStorage.getItem(key) || "[]");
-  if (!existing.includes(value)) {
-    existing.push(value);
-    localStorage.setItem(key, JSON.stringify(existing));
-    const datalist = document.getElementById(listId);
-    const opt = document.createElement("option");
-    opt.value = value;
-    datalist.appendChild(opt);
-  }
-}
-
-function loadHistory() {
-  ["suppliers", "varieties"].forEach(id => {
-    const key = `history_${id}`;
-    const list = JSON.parse(localStorage.getItem(key) || "[]");
-    const datalist = document.getElementById(id);
-    list.forEach(val => {
-      const opt = document.createElement("option");
-      opt.value = val;
-      datalist.appendChild(opt);
+function handleEnterKeyJump() {
+  const inputs = Array.from(document.querySelectorAll("input, select, textarea"));
+  inputs.forEach((el, i) => {
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (el.classList.contains("date-input")) validateDate(el);
+        if (el.validationMessage) return el.reportValidity();
+        if (["price", "freight_fee", "local", "moss", "pot"].includes(el.id)) {
+          el.value = formatCurrency(el.value);
+        }
+        let next = i + 1;
+        while (next < inputs.length && (inputs[next].disabled || inputs[next].type === 'hidden')) next++;
+        if (inputs[next]) inputs[next].focus();
+      }
     });
   });
-}
-
-function autoFormatNumbers() {
-  ["price", "freight_fee", "local", "moss", "pot"].forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener("blur", () => {
-      el.value = formatCurrency(el.value);
-      updateRMFields();
-    });
-  });
-}
-
-function setupEvents() {
-  document.getElementById("currency").addEventListener("change", updateRMFields);
-  document.getElementById("quantity").addEventListener("blur", updateRMFields);
-  document.getElementById("total_plants").addEventListener("blur", updateRMFields);
-  document.getElementById("arrival_date").addEventListener("blur", calculateDays);
-  document.getElementById("container_date").addEventListener("blur", calculateDays);
-  document.getElementById("freight_fee").addEventListener("blur", updateFreightRatio);
-}
-
-function autoSaveEvery3Min() {
-  setInterval(() => {
-    manualSave();
-    console.log("⏱️ 每3分钟自动储存");
-  }, 180000);
 }
 
 window.onload = () => {
-  loadHistory();
-  autoFormatNumbers();
-  setupEvents();
+  handleEnterKeyJump();
   updateRMFields();
   calculateDays();
-  autoSaveEvery3Min();
+  setInterval(manualSave, 180000);
 };
 </script>
 </body>
