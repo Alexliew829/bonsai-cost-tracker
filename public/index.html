@@ -242,7 +242,7 @@ function todayDDMMYY(){
   const dd=String(now.getDate()).padStart(2,'0');
   const mm=String(now.getMonth()+1).padStart(2,'0');
   const yy=String(now.getFullYear()).slice(-2);
-  return ${dd}/${mm}/${yy};
+  return `${dd}/${mm}/${yy}`;
 }
 
 function parseDDMMYY(str){
@@ -340,12 +340,12 @@ function updateSalesPrices(rmCostPerPlant){
     "50%": rmCostPerPlant * 2.00 * 1.12,
     "55%": rmCostPerPlant * 2.23 * 1.12
   };
-  let html  = <div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>;
-  html     += <div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>;
-  html     += <div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>;
-  html     += <div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>;
-  html     += <div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>;
-  html     += <div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>;
+  let html  = `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>`;
+  html     += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>`;
+  html     += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>`;
+  html     += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>`;
+  html     += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>`;
+  html     += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>`;
   elPriceSummary.innerHTML = html;
 }
 
@@ -603,7 +603,7 @@ async function aggregateShipments(){
   updateDays();
 })();
 
-/* ------------------------ 页面加载后自动聚焦第1个字段 ------------------------ */
+/* ------------------------ 页面加载后自动聚焦第一个字段 ------------------------ */
 window.addEventListener('load',()=>{ elSupplier.focus(); });
 
 </script>
