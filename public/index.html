@@ -111,7 +111,9 @@
     </div>
 
     <label>供应商</label><label>品种</label>
-    <input id="supplier" /><input id="variety" />
+    <input id="supplier" list="supplierList" /><input id="variety" list="varietyList" />
+    <datalist id="supplierList"></datalist>
+    <datalist id="varietyList"></datalist>
 
     <label>币值 + 单价（原币）+ 单价（RM）</label><label>数量（棵）</label>
     <div class="row3">
@@ -131,8 +133,8 @@
     <input id="shipment_id" />
 
     <label>发货总数</label><label>发货总金额（RM）</label>
-    <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" />
-    <input id="total_amount" />
+    <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" disabled />
+    <input id="total_amount" disabled />
 
     <label>包装明细（木架，箱子）</label><label>抵达仓库日期</label>
     <input id="packing" type="number" inputmode="numeric" pattern="[0-9]*" />
@@ -158,110 +160,6 @@
     <div id="priceSummary" class="full"></div>
   </form>
 
-<script>
-const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
-
-function formatCurrency(val) {
-  const num = parseFloat(val.toString().replace(/,/g, ''));
-  return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function updateRM() {
-  const cur = document.getElementById('currency').value;
-  const rawText = document.getElementById('price').value.replace(/,/g, '');
-  const raw = parseFloat(rawText);
-  const rate = rateMap[cur] || 0;
-  const rm = raw * rate;
-  document.getElementById('price_rm').value = isNaN(rm) ? '' : formatCurrency(rm);
-  updateSalesPrices(rm);
-}
-
-function updateSalesPrices(rmCost) {
-  const prices = {
-    "20%": rmCost * 1.26 * 1.12,
-    "30%": rmCost * 1.43 * 1.12,
-    "40%": rmCost * 1.67 * 1.12,
-    "45%": rmCost * 1.82 * 1.12,
-    "50%": rmCost * 2.00 * 1.12,
-    "55%": rmCost * 2.23 * 1.12
-  };
-  let html = `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>`;
-  html += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>`;
-  html += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>`;
-  html += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>`;
-  html += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>`;
-  html += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>`;
-  document.getElementById('priceSummary').innerHTML = html;
-}
-
-function validateDate(input) {
-  const raw = input.value.replace(/[^0-9]/g, '');
-  if (!input.value) {
-    const now = new Date();
-    const dd = String(now.getDate()).padStart(2, '0');
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const yy = String(now.getFullYear()).slice(2);
-    input.value = `${dd}/${mm}/${yy}`;
-  } else if (raw.length === 6) {
-    input.value = raw.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
-  }
-
-  const [d, m, y] = input.value.split('/').map(Number);
-  const valid = d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 0 && y <= 99;
-
-  if (!valid) {
-    input.classList.add('error');
-    input.setCustomValidity('请输入有效日期');
-    input.reportValidity();
-  } else {
-    input.classList.remove('error');
-    input.setCustomValidity('');
-  }
-}
-
-const fields = Array.from(document.querySelectorAll('input, select, textarea'));
-fields.forEach((el, i) => {
-  el.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (el.classList.contains('date-input')) validateDate(el);
-      if (el.validationMessage) return el.reportValidity();
-      if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price') || ['local','moss','pot'].includes(el.id)) {
-        el.value = formatCurrency(el.value);
-      }
-      let next = i + 1;
-      while (next < fields.length && (fields[next].disabled || fields[next].type === 'hidden')) next++;
-      if (fields[next]) fields[next].focus();
-    }
-  });
-  if (el.classList.contains('date-input')) {
-    el.addEventListener('blur', () => validateDate(el));
-  }
-  if (el.id.includes('amount') || el.id.includes('fee') || el.id.includes('price') || ['local','moss','pot'].includes(el.id)) {
-    el.addEventListener('blur', () => {
-      el.value = formatCurrency(el.value);
-    });
-  }
-});
-
-// ✅ 处理 price（原币）输入逻辑，实时换算 RM，blur 后才格式化千位数
-const priceInput = document.getElementById('price');
-priceInput.addEventListener('input', () => {
-  const raw = parseFloat(priceInput.value.replace(/,/g, ''));
-  const rate = rateMap[document.getElementById('currency').value] || 0;
-  const rm = raw * rate;
-  document.getElementById('price_rm').value = isNaN(rm) ? '' : formatCurrency(rm);
-});
-priceInput.addEventListener('blur', () => {
-  priceInput.value = formatCurrency(priceInput.value);
-  updateRM();
-});
-
-document.getElementById('currency').addEventListener('change', updateRM);
-
-function manualSave() {
-  alert("✅ 模拟：资料已储存（你可替换为真实上传逻辑）");
-}
-</script>
+<script src="bonsai-cost.js"></script>
 </body>
 </html>
