@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>盆栽成本记录系统 Lover Legend Gardening</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <style>
     body {
       font-family: sans-serif;
@@ -47,18 +45,41 @@
       font-weight: bold;
       font-size: 14px;
     }
-    input, select {
+    input, select, textarea {
       width: 100%;
       padding: 6px 8px;
       font-size: 14px;
       box-sizing: border-box;
-      background-color: #f0f0f0;
+      white-space: pre-wrap;
+      overflow: hidden;
     }
-    input:focus, select:focus {
-      background-color: #fff;
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
     .full {
       grid-column: 1 / -1;
+    }
+    .highlight {
+      color: red;
+      font-weight: bold;
+    }
+    .error {
+      border: 2px solid red !important;
+      background-color: #ffe6e6 !important;
+    }
+    .url-link {
+      color: blue;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .row3 {
+      display: flex;
+      gap: 6px;
+    }
+    .row3 > * {
+      flex: 1;
     }
     .entry {
       font-size: 16px;
@@ -85,125 +106,204 @@
 
   <form id="bonsaiForm">
     <div class="top-bar">
-      <h2>🌱 盆栽资料</h2>
-      <button type="button" onclick="manualSave()">📂 手动储存全部资料</button>
+      <h2>🌱 盆栽资料 / 🚛 发货资料 / 🧾 成本与销售细节</h2>
+      <button type="button" onclick="manualSave()">📂 手动储存</button>
     </div>
 
     <label>供应商</label><label>品种</label>
-    <input id="supplier" /><input id="variety" />
+    <input id="supplier" list="suppliers" /><input id="variety" list="varieties" />
+    <datalist id="suppliers"></datalist>
+    <datalist id="varieties"></datalist>
 
     <label>币值 + 单价（原币）+ 单价（RM）</label><label>数量（棵）</label>
-    <div style="display:flex; gap:6px;">
+    <div class="row3">
       <select id="currency">
         <option value="CNY">CNY</option>
         <option value="VND">VND</option>
         <option value="NTD">NTD</option>
         <option value="IDR">IDR</option>
       </select>
-      <input id="price" type="text" placeholder="0.00" />
-      <input id="price_rm" disabled placeholder="RM" />
+      <input id="price" placeholder="0.00" />
+      <input id="price_rm" disabled placeholder="0.00" />
     </div>
     <input id="quantity" type="number" placeholder="0" />
 
     <label>图片网址</label><label>发货单号</label>
-    <input id="image_url" type="url" />
+    <input id="image_url" type="url" class="url-link" onclick="if(this.value.startsWith('http')) window.open(this.value)" />
     <input id="shipment_id" />
 
     <label>发货总数</label><label>发货总金额（RM自动）</label>
     <input id="total_plants" type="number" placeholder="0" />
-    <input id="total_amount" disabled placeholder="自动计算" />
+    <input id="total_amount" disabled placeholder="0.00" />
 
     <label>包装明细</label><label>抵达仓库日期</label>
     <input id="packing" type="number" placeholder="0" />
-    <input id="warehouse_date" placeholder="DD/MM/YY" />
+    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" />
 
     <label>装柜日期</label><label>海运单号</label>
-    <input id="container_date" placeholder="DD/MM/YY" />
+    <input id="container_date" class="date-input" placeholder="DD/MM/YY" />
     <input id="shipping_no" />
 
     <label>抵达日期</label><label>运费（RM）</label>
-    <input id="arrival_date" placeholder="DD/MM/YY" />
-    <input id="freight_fee" type="text" placeholder="0.00" />
+    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
+    <input id="freight_fee" placeholder="0.00" />
 
     <label>天数（自动）</label><label>运费比例（自动）</label>
     <input id="days" disabled /><input id="freight_ratio" disabled />
 
     <label>本地运输</label><label>苔藓</label>
-    <input id="local" type="text" placeholder="0.00" /><input id="moss" type="text" placeholder="0.00" />
+    <input id="local" placeholder="0.00" /><input id="moss" placeholder="0.00" />
 
     <label>花盆</label><label>原成本</label>
-    <input id="pot" type="text" placeholder="0.00" /><input id="base_cost" disabled />
+    <input id="pot" placeholder="0.00" /><input id="base_cost" disabled placeholder="0.00" />
 
     <div id="priceSummary" class="full"></div>
   </form>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT.firebaseapp.com",
-      projectId: "YOUR_PROJECT",
-      storageBucket: "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "SENDER_ID",
-      appId: "APP_ID"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+<script>
+// ⏱️ 汇率换算
+const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
 
-    function formatCurrency(val) {
-      const num = parseFloat(val.toString().replace(/,/g, ''));
-      return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+function formatCurrency(val) {
+  const num = parseFloat(val.toString().replace(/,/g, ''));
+  return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
-    function updatePriceSummary() {
-      const priceRM = parseFloat(document.getElementById('price_rm').value.replace(/,/g, ''));
-      if (isNaN(priceRM)) return;
-      const factors = {
-        '20%': 1.26 * 1.12,
-        '30%': 1.43 * 1.12,
-        '40%': 1.67 * 1.12,
-        '45%': 1.82 * 1.12,
-        '50%': 2.00 * 1.12,
-        '55%': 2.23 * 1.12
-      };
-      let html = '<div class=\"entry\"><strong>🧾 成本与销售售价：</strong></div>';
-      for (const key in factors) {
-        const sell = priceRM * factors[key];
-        const highlight = key === '50%' ? ' style=\"color:red;font-weight:bold;\"' : '';
-        html += `<div class=\"entry\"${highlight}><strong>${key} 利润售价：</strong>RM ${formatCurrency(sell)}</div>`;
-      }
-      document.getElementById('priceSummary').innerHTML = html;
-    }
+function getRMPrice() {
+  const currency = document.getElementById("currency").value;
+  const raw = parseFloat(document.getElementById("price").value.replace(/,/g, ""));
+  const rate = rateMap[currency] || 0;
+  return raw * rate;
+}
 
-    document.getElementById('price').addEventListener('input', () => {
-      const val = document.getElementById('price').value.replace(/,/g, '');
-      const cur = document.getElementById('currency').value;
-      const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
-      const rm = parseFloat(val) * (rateMap[cur] || 0);
-      document.getElementById('price_rm').value = isNaN(rm) ? '' : formatCurrency(rm);
-      updatePriceSummary();
+function updateRMFields() {
+  const rmPrice = getRMPrice();
+  document.getElementById("price_rm").value = formatCurrency(rmPrice);
+  const qty = parseFloat(document.getElementById("quantity").value) || 0;
+  const baseCost = rmPrice * qty;
+  document.getElementById("base_cost").value = formatCurrency(baseCost);
+
+  const totalPlants = parseFloat(document.getElementById("total_plants").value) || 0;
+  const totalAmount = totalPlants * rmPrice;
+  document.getElementById("total_amount").value = formatCurrency(totalAmount);
+
+  updateFreightRatio();
+  updateSalesPrices(baseCost);
+}
+
+function updateSalesPrices(baseCost) {
+  const prices = {
+    "20%": baseCost * 1.26 * 1.12,
+    "30%": baseCost * 1.43 * 1.12,
+    "40%": baseCost * 1.67 * 1.12,
+    "45%": baseCost * 1.82 * 1.12,
+    "50%": baseCost * 2.00 * 1.12,
+    "55%": baseCost * 2.23 * 1.12,
+  };
+  let html = "";
+  for (let key in prices) {
+    const style = key === "50%" ? "color:red;font-weight:bold;" : "";
+    html += `<div class="entry" style="${style}"><strong>${key} 利润售价：</strong>RM ${formatCurrency(prices[key])}</div>`;
+  }
+  document.getElementById("priceSummary").innerHTML = html;
+}
+
+function updateFreightRatio() {
+  const freight = parseFloat(document.getElementById("freight_fee").value.replace(/,/g, "")) || 0;
+  const total = parseFloat(document.getElementById("total_amount").value.replace(/,/g, "")) || 0;
+  const ratio = total ? freight / total : 0;
+  document.getElementById("freight_ratio").value = `${(ratio * 100).toFixed(2)}%`;
+}
+
+function calculateDays() {
+  const toDate = (str) => {
+    const [d, m, y] = str.split("/").map(Number);
+    return new Date(2000 + y, m - 1, d);
+  };
+  const d1 = document.getElementById("container_date").value;
+  const d2 = document.getElementById("arrival_date").value;
+  if (d1 && d2 && d1.includes("/") && d2.includes("/")) {
+    const days = Math.round((toDate(d2) - toDate(d1)) / (1000 * 60 * 60 * 24));
+    document.getElementById("days").value = isNaN(days) ? "" : days;
+  }
+}
+
+function manualSave() {
+  const fields = [
+    "supplier", "variety", "currency", "price", "price_rm", "quantity",
+    "image_url", "shipment_id", "total_plants", "total_amount",
+    "packing", "warehouse_date", "container_date", "shipping_no",
+    "arrival_date", "freight_fee", "days", "freight_ratio",
+    "local", "moss", "pot", "base_cost"
+  ];
+  const data = {};
+  fields.forEach(id => data[id] = document.getElementById(id).value);
+  console.log("📦 储存数据：", data);
+  saveHistory("suppliers", data.supplier);
+  saveHistory("varieties", data.variety);
+}
+
+function saveHistory(listId, value) {
+  if (!value) return;
+  const key = `history_${listId}`;
+  let existing = JSON.parse(localStorage.getItem(key) || "[]");
+  if (!existing.includes(value)) {
+    existing.push(value);
+    localStorage.setItem(key, JSON.stringify(existing));
+    const datalist = document.getElementById(listId);
+    const opt = document.createElement("option");
+    opt.value = value;
+    datalist.appendChild(opt);
+  }
+}
+
+function loadHistory() {
+  ["suppliers", "varieties"].forEach(id => {
+    const key = `history_${id}`;
+    const list = JSON.parse(localStorage.getItem(key) || "[]");
+    const datalist = document.getElementById(id);
+    list.forEach(val => {
+      const opt = document.createElement("option");
+      opt.value = val;
+      datalist.appendChild(opt);
     });
+  });
+}
 
-    document.getElementById('currency').addEventListener('change', () => {
-      document.getElementById('price').dispatchEvent(new Event('input'));
+function autoFormatNumbers() {
+  ["price", "freight_fee", "local", "moss", "pot"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("blur", () => {
+      el.value = formatCurrency(el.value);
+      updateRMFields();
     });
+  });
+}
 
-    function manualSave() {
-      const fields = [
-        'supplier', 'variety', 'currency', 'price', 'price_rm', 'quantity',
-        'image_url', 'shipment_id', 'total_plants', 'total_amount',
-        'packing', 'warehouse_date', 'container_date', 'shipping_no',
-        'arrival_date', 'freight_fee', 'days', 'freight_ratio',
-        'local', 'moss', 'pot', 'base_cost'
-      ];
-      const data = {};
-      fields.forEach(id => data[id] = document.getElementById(id).value || '');
-      data.timestamp = new Date().toISOString();
-      db.collection(\"bonsai_records\").add(data).then(() => {
-        alert(\"✅ 成本与销售细节已储存 Firebase\");
-      });
-    }
+function setupEvents() {
+  document.getElementById("currency").addEventListener("change", updateRMFields);
+  document.getElementById("quantity").addEventListener("blur", updateRMFields);
+  document.getElementById("total_plants").addEventListener("blur", updateRMFields);
+  document.getElementById("arrival_date").addEventListener("blur", calculateDays);
+  document.getElementById("container_date").addEventListener("blur", calculateDays);
+  document.getElementById("freight_fee").addEventListener("blur", updateFreightRatio);
+}
 
-    setInterval(manualSave, 180000); // 每3分钟自动储存
-  </script>
+function autoSaveEvery3Min() {
+  setInterval(() => {
+    manualSave();
+    console.log("⏱️ 每3分钟自动储存");
+  }, 180000);
+}
+
+window.onload = () => {
+  loadHistory();
+  autoFormatNumbers();
+  setupEvents();
+  updateRMFields();
+  calculateDays();
+  autoSaveEvery3Min();
+};
+</script>
 </body>
 </html>
