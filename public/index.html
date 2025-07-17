@@ -5,32 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>盆栽成本记录系统 Lover Legend Gardening</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background-color: #f5f5f5;
-      margin: 0;
-      padding: 20px;
-    }
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .header img {
-      height: 50px;
-    }
-    .header h1 {
-      font-size: 24px;
-      margin: 0;
-    }
-    h2 {
-      font-size: 18px;
-      text-align: center;
-      margin: 5px 0 15px;
-      grid-column: 1 / -1;
-    }
+    body { font-family: sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }
+    .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+    .header img { height: 50px; }
+    .header h1 { font-size: 24px; margin: 0; }
+    h2 { font-size: 18px; text-align: center; margin: 5px 0 15px; grid-column: 1 / -1; }
     form {
       background: #fff;
       padding: 20px;
@@ -41,61 +20,25 @@
       grid-template-columns: 1fr 1fr;
       gap: 12px 20px;
     }
-    label {
-      font-weight: bold;
-      font-size: 14px;
-    }
+    label { font-weight: bold; font-size: 14px; }
     input, select, textarea {
-      width: 100%;
-      padding: 6px 8px;
-      font-size: 14px;
-      box-sizing: border-box;
-      white-space: pre-wrap;
-      overflow: hidden;
+      width: 100%; padding: 6px 8px; font-size: 14px;
+      box-sizing: border-box; white-space: pre-wrap; overflow: hidden;
     }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
-    .full {
-      grid-column: 1 / -1;
-    }
-    .highlight {
-      color: red;
-      font-weight: bold;
-    }
-    .error {
-      border: 2px solid red !important;
-      background-color: #ffe6e6 !important;
-    }
-    .url-link {
-      color: blue;
-      text-decoration: underline;
-      cursor: pointer;
-    }
-    .row3 {
-      display: flex;
-      gap: 6px;
-    }
-    .row3 > * {
-      flex: 1;
-    }
-    .entry {
-      font-size: 16px;
-      margin-top: 4px;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      grid-column: 1 / -1;
-    }
-    .top-bar button {
-      font-size: 14px;
-      padding: 4px 10px;
-      cursor: pointer;
-    }
+    .full { grid-column: 1 / -1; }
+    .highlight { color: red; font-weight: bold; }
+    .error { border: 2px solid red !important; background-color: #ffe6e6 !important; }
+    .url-link { color: blue; text-decoration: underline; cursor: pointer; }
+    .row3 { display: flex; gap: 6px; }
+    .row3 > * { flex: 1; }
+    .entry { font-size: 16px; margin-top: 4px; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; grid-column: 1 / -1; }
+    .top-bar button { font-size: 14px; padding: 4px 10px; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -111,9 +54,7 @@
     </div>
 
     <label>供应商</label><label>品种</label>
-    <input id="supplier" list="suppliers" /><input id="variety" list="varieties" />
-    <datalist id="suppliers"></datalist>
-    <datalist id="varieties"></datalist>
+    <input id="supplier" /><input id="variety" />
 
     <label>币值 + 单价（原币）+ 单价（RM）</label><label>数量（棵）</label>
     <div class="row3">
@@ -168,22 +109,6 @@ function formatCurrency(val) {
   return isNaN(num) ? '' : num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function validateDate(input) {
-  const raw = input.value.replace(/[^0-9]/g, '');
-  if (!input.value) return;
-  if (raw.length === 6) input.value = raw.replace(/(\d{2})(\d{2})(\d{2})/, '$1/$2/$3');
-  const [d, m, y] = input.value.split('/').map(Number);
-  const valid = d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 0 && y <= 99;
-  if (!valid) {
-    input.classList.add('error');
-    input.setCustomValidity('请输入有效日期');
-    input.reportValidity();
-  } else {
-    input.classList.remove('error');
-    input.setCustomValidity('');
-  }
-}
-
 function updateSalesPrices(baseCost) {
   const prices = {
     "20%": baseCost * 1.26 * 1.12,
@@ -203,15 +128,19 @@ function updateSalesPrices(baseCost) {
 
 function updateRMFields() {
   const currency = document.getElementById("currency").value;
-  const raw = parseFloat(document.getElementById("price").value.replace(/,/g, ''));
+  const priceInput = document.getElementById("price");
+  const raw = parseFloat(priceInput.value.replace(/,/g, ''));
   const rate = rateMap[currency] || 0;
   const rm = raw * rate;
   document.getElementById("price_rm").value = formatCurrency(rm);
+
   const qty = parseFloat(document.getElementById("quantity").value) || 0;
   const base = rm * qty;
   document.getElementById("base_cost").value = formatCurrency(base);
+
   const totalQty = parseFloat(document.getElementById("total_plants").value) || 0;
   document.getElementById("total_amount").value = formatCurrency(totalQty * rm);
+
   updateSalesPrices(base);
   updateFreightRatio();
 }
@@ -240,32 +169,23 @@ function manualSave() {
   const fields = document.querySelectorAll("input, select");
   const data = {};
   fields.forEach(f => data[f.id] = f.value);
-  console.log("储存数据：", data);
+  console.log("📦 储存数据：", data);
 }
 
-function handleEnterKeyJump() {
-  const inputs = Array.from(document.querySelectorAll("input, select, textarea"));
-  inputs.forEach((el, i) => {
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        if (el.classList.contains("date-input")) validateDate(el);
-        if (el.validationMessage) return el.reportValidity();
-        if (["price", "freight_fee", "local", "moss", "pot"].includes(el.id)) {
-          el.value = formatCurrency(el.value);
-        }
-        let next = i + 1;
-        while (next < inputs.length && (inputs[next].disabled || inputs[next].type === 'hidden')) next++;
-        if (inputs[next]) inputs[next].focus();
-      }
-    });
-  });
+function setupEvents() {
+  document.getElementById("currency").addEventListener("change", updateRMFields);
+  document.getElementById("price").addEventListener("input", updateRMFields);
+  document.getElementById("quantity").addEventListener("input", updateRMFields);
+  document.getElementById("total_plants").addEventListener("input", updateRMFields);
+  document.getElementById("freight_fee").addEventListener("input", updateFreightRatio);
+  document.getElementById("arrival_date").addEventListener("input", calculateDays);
+  document.getElementById("container_date").addEventListener("input", calculateDays);
 }
 
 window.onload = () => {
-  handleEnterKeyJump();
   updateRMFields();
   calculateDays();
+  setupEvents();
   setInterval(manualSave, 180000);
 };
 </script>
