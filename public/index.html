@@ -96,6 +96,20 @@
   .with-datalist::-webkit-calendar-picker-indicator {
     display: none !important;
   }
+  /* 发货按钮样式 */
+  #markAsShipped {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    grid-column: 1 / -1;
+    margin-top: 10px;
+  }
+  #markAsShipped:hover {
+    background-color: #45a049;
+  }
 </style>
 </head>
 <body>
@@ -105,6 +119,9 @@
   </div>
 
   <form id="bonsaiForm" autocomplete="off">
+    <!-- 隐藏状态字段 -->
+    <input type="hidden" id="record_status" value="purchased">
+    
     <!-- 🌱 盆栽资料（含内陆发货信息） -->
     <div class="top-bar">
       <h2>🌱 盆栽资料（含内陆发货信息）</h2>
@@ -136,26 +153,26 @@
 
     <label for="image_url">图片网址</label><label for="shipment_id">发货单号</label>
     <input id="image_url" type="url" class="url-link" placeholder="https://..." onclick="openImageUrl(this)" />
-    <input id="shipment_id" placeholder="例如 2025CNY01" />
+    <input id="shipment_id" placeholder="例如 2025CNY01" readonly />
 
     <!-- 🚛 发货资料 -->
     <h2 class="full">🚛 发货资料</h2>
 
     <label for="total_plants">发货总数</label><label for="total_amount">发货总金额（RM自动）</label>
-    <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
+    <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" readonly />
     <input id="total_amount" disabled placeholder="0.00" />
 
     <label for="warehouse_date">包装明细（木架，箱子）</label><label for="warehouse_date">抵达仓库日期</label>
-    <input id="packing" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
-    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" />
+    <input id="packing" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" readonly />
+    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" readonly />
 
     <label for="container_date">装柜日期</label><label for="shipping_no">海运单号</label>
-    <input id="container_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="shipping_no" />
+    <input id="container_date" class="date-input" placeholder="DD/MM/YY" readonly />
+    <input id="shipping_no" readonly />
 
     <label for="arrival_date">抵达日期</label><label for="freight_fee">运费（RM）</label>
-    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="freight_fee" type="text" inputmode="decimal" placeholder="0.00" />
+    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" readonly />
+    <input id="freight_fee" type="text" inputmode="decimal" placeholder="0.00" readonly />
 
     <label for="days">运输天数</label><label for="freight_ratio">运费比例（自动）</label>
     <input id="days" disabled placeholder="0" />
@@ -173,6 +190,9 @@
     <input id="base_cost" disabled placeholder="0.00" />
 
     <div id="priceSummary" class="full"></div>
+    
+    <!-- 发货按钮 -->
+    <button type="button" id="markAsShipped" onclick="markAsShipped()">标记为已发货</button>
   </form>
 
 <script>
@@ -282,6 +302,7 @@ const elPot          = document.getElementById('pot');
 const elBaseCost     = document.getElementById('base_cost');
 const elPriceSummary = document.getElementById('priceSummary');
 const elAutoSaveStatus = document.getElementById('autoSaveStatus');
+const elRecordStatus = document.getElementById('record_status');
 
 /* ------------------------ 历史下拉 (localStorage) ------------------------ */
 const SUPPLIER_STORE_KEY = 'bonsai_supplier_history_v1';
@@ -351,9 +372,9 @@ function updateSalesPrices(rmCostPerPlant){
 
 /* ------------------------ 发货总金额（RM自动） ------------------------ */
 function updateTotalAmount(){
-  const totalPlants=parseNum(elTotalPlants.value);
-  const rmPerPlant=parseNum(elPriceRM.value);
-  const total = totalPlants * rmPerPlant;
+  const quantity = parseNum(elQuantity.value);
+  const rmPerPlant = parseNum(elPriceRM.value);
+  const total = quantity * rmPerPlant;
   elTotalAmount.value = total ? formatCurrency(total) : '';
   updateFreightRatio();
 }
@@ -413,6 +434,34 @@ function updateBaseCost(){
   const pot        = parseNum(elPot.value);
   const base = (rmPerPlant*qty) + local + moss + pot;
   elBaseCost.value = base ? formatCurrency(base) : '';
+}
+
+/* ------------------------ 标记为已发货 ------------------------ */
+function markAsShipped() {
+  if (!elShipmentId.value.trim()) {
+    alert('请填写发货单号');
+    elShipmentId.focus();
+    return;
+  }
+  
+  // 启用发货相关字段
+  document.getElementById('shipment_id').readOnly = false;
+  document.getElementById('total_plants').readOnly = false;
+  document.getElementById('packing').readOnly = false;
+  document.getElementById('warehouse_date').readOnly = false;
+  document.getElementById('container_date').readOnly = false;
+  document.getElementById('shipping_no').readOnly = false;
+  document.getElementById('arrival_date').readOnly = false;
+  document.getElementById('freight_fee').readOnly = false;
+  
+  // 自动计算发货总数和总金额
+  elTotalPlants.value = elQuantity.value;
+  updateTotalAmount();
+  
+  // 更新状态
+  document.getElementById('record_status').value = 'shipped';
+  
+  alert('已标记为发货状态，请填写完整发货信息后保存');
 }
 
 /* ------------------------ 输入事件绑定 ------------------------ */
@@ -493,55 +542,72 @@ async function manualSave(){
 }
 
 function validateFormBeforeSave(){
-  // 校验最核心字段（供应商、品种、币值、单价、数量、发货单号…）
+  // 校验最核心字段（供应商、品种、币值、单价、数量）
   if(!elSupplier.value.trim()){ alert('请输入供应商'); elSupplier.focus(); return false; }
   if(!elVariety.value.trim()){ alert('请输入品种'); elVariety.focus(); return false; }
-  // 自动补日期但需验证
-  [elWarehouseDt,elContainerDt,elArrivalDt].forEach(el=>{ if(!validateDate(el)){/* handled */} });
-  // 如果日期有 error class 则不保存
-  if(document.querySelector('.error')) return false;
+  
+  // 如果是发货状态，需要校验发货相关字段
+  if(elRecordStatus.value === 'shipped') {
+    if(!elShipmentId.value.trim()){ alert('请输入发货单号'); elShipmentId.focus(); return false; }
+    // 自动补日期但需验证
+    [elWarehouseDt,elContainerDt,elArrivalDt].forEach(el=>{ if(!validateDate(el)){/* handled */} });
+    // 如果日期有 error class 则不保存
+    if(document.querySelector('.error')) return false;
+  }
   return true;
 }
 
-/* ------------------------ 保存到 Firebase（仅 15 字段） ------------------------ */
+/* ------------------------ 保存到 Firebase ------------------------ */
 async function saveRecordToFirebase(){
   if(!db){ throw new Error('Firebase Firestore 未初始化'); }
+  
+  const recordStatus = elRecordStatus.value;
+  const isShipped = recordStatus === 'shipped';
+  
   const docData = {
     supplier: elSupplier.value.trim() || '',
-    variety: elVariety.value.trim()  || '',
+    variety: elVariety.value.trim() || '',
     currency: elCurrency.value,
-    unit_price_foreign: parseNum(elPrice.value),   // 单价（原币）
-    unit_price_rm: parseNum(elPriceRM.value),      // RM 本钱（单棵）
+    unit_price_foreign: parseNum(elPrice.value),
+    unit_price_rm: parseNum(elPriceRM.value),
     quantity: parseNum(elQuantity.value),
-    shipment_id: elShipmentId.value.trim() || '',
-    total_plants: parseNum(elTotalPlants.value),
-    total_amount_rm: parseNum(elTotalAmount.value), // 发货总金额（RM自动）
-    container_date: elContainerDt.value.trim(),
-    arrival_date: elArrivalDt.value.trim(),
-    transit_days: parseNum(elDays.value),
-    freight_rm: parseNum(elFreightFee.value),
-    freight_ratio: elFreightRatio.value.trim(), // % 字符串保留
-    image_url: elImageUrl.value.trim(),
-    // 额外保存仓库日期 & packing & shipping_no 供参考（未列 15 字段中但不影响）
-    warehouse_date: elWarehouseDt.value.trim(),
-    packing: parseNum(elPacking.value),
-    shipping_no: elShippingNo.value.trim(),
+    status: recordStatus,
     created_at: new Date().toISOString()
   };
+  
+  // 如果是发货状态，添加发货相关信息
+  if (isShipped) {
+    docData.shipment_id = elShipmentId.value.trim() || '';
+    docData.total_plants = parseNum(elTotalPlants.value);
+    docData.total_amount_rm = parseNum(elPriceRM.value) * parseNum(elQuantity.value);
+    
+    // 添加其他发货相关信息
+    docData.container_date = elContainerDt.value.trim();
+    docData.arrival_date = elArrivalDt.value.trim();
+    docData.transit_days = parseNum(elDays.value);
+    docData.freight_rm = parseNum(elFreightFee.value);
+    docData.freight_ratio = elFreightRatio.value.trim();
+    docData.image_url = elImageUrl.value.trim();
+    docData.warehouse_date = elWarehouseDt.value.trim();
+    docData.packing = parseNum(elPacking.value);
+    docData.shipping_no = elShippingNo.value.trim();
+  }
 
-  // 使用自动 doc（你未要求指定 doc id）
+  // 保存记录
   await db.collection('bonsai_records').add(docData);
 
   // 写入 localStorage 历史
   addToHistory('supplier', elSupplier.value);
-  addToHistory('variety',  elVariety.value);
+  addToHistory('variety', elVariety.value);
 
-  formDirty=false;
-  lastAutoSaveTS=Date.now();
-  showAutoSaveStatus('已储存 '+new Date().toLocaleTimeString(),'#666');
+  formDirty = false;
+  lastAutoSaveTS = Date.now();
+  showAutoSaveStatus('已储存 ' + new Date().toLocaleTimeString(), '#666');
 
-  // 自动分组统计
-  aggregateShipments();
+  // 如果是发货记录，更新汇总
+  if (isShipped) {
+    aggregateShipments();
+  }
 }
 
 /* ------------------------ 每 3 分钟自动储存 ------------------------ */
@@ -560,13 +626,6 @@ setInterval(async()=>{
 }, AUTO_SAVE_INTERVAL);
 
 /* ------------------------ 相同发货单号自动汇总（前端） ------------------------ */
-/* 说明：
-   - 每次保存后，从 Firestore 抓取最近 500 笔（可调），
-     以 shipment_id 分组，计算
-       sum(total_plants) / sum(quantity) 作为发货总数（择优）
-       sum(total_amount_rm) 如果你后续想改为 “∑(unit_price_rm * quantity)” 可以
-   - 当前仅 console.log，不改变现有 UI 字段，避免破坏布局。
-*/
 async function aggregateShipments(){
   if(!db) return;
   try{
@@ -584,7 +643,6 @@ async function aggregateShipments(){
       groups[sid].rows++;
     });
     console.log('📦 发货单号汇总：',groups);
-    // 你若想把汇总写回每笔 doc，可在此 iterate 更新；目前不修改 Firestore
   }catch(err){
     console.error('汇总失败',err);
   }
@@ -605,7 +663,6 @@ async function aggregateShipments(){
 
 /* ------------------------ 页面加载后自动聚焦第一个字段 ------------------------ */
 window.addEventListener('load',()=>{ elSupplier.focus(); });
-
 </script>
 </body>
 </html>
