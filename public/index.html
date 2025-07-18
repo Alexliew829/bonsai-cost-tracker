@@ -66,7 +66,7 @@
 
     <div id="priceSummary" class="full"></div>
 
-    <button type="button" onclick="manualSave()">储存</button>
+    <button type="button" onclick="manualSave()">手动储存全部资料</button>
   </form>
 
 <script>
@@ -181,10 +181,10 @@ function saveHistory(input, listId) {
   }
 }
 
-// 🔁 自动储存每 3 分钟
+// 自动储存每 3 分钟
 setInterval(manualSave, 180000);
 
-// 🔁 根据 shipment_id 汇总发货数据
+// 发货单号自动汇总
 elShipmentId.addEventListener('blur', async () => {
   const sid = elShipmentId.value.trim();
   if (!sid) return;
