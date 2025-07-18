@@ -1,611 +1,153 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>盆栽成本记录系统 Lover Legend Gardening</title>
-<style>
-  body {
-    font-family: sans-serif;
-    background-color: #f5f5f5;
-    margin: 0;
-    padding: 20px;
-  }
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  .header img { height: 50px; }
-  .header h1 {
-    font-size: 24px;
-    margin: 0;
-  }
-  h2 {
-    font-size: 18px;
-    text-align: center;
-    margin: 5px 0 15px;
-    grid-column: 1 / -1;
-  }
-  form {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    max-width: 1000px;
-    margin: auto;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px 20px;
-  }
-  label {
-    font-weight: bold;
-    font-size: 14px;
-  }
-  input, select, textarea {
-    width: 100%;
-    padding: 6px 8px;
-    font-size: 14px;
-    box-sizing: border-box;
-    white-space: pre-wrap;
-    overflow: hidden;
-  }
-  input::placeholder { color:#999; }
-  .currency-placeholder { color:#999; }
-  input[type=number]::-webkit-inner-spin-button,
-  input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  .full { grid-column: 1 / -1; }
-  .highlight { color: red; font-weight: bold; }
-  .error {
-    border: 2px solid red !important;
-    background-color: #ffe6e6 !important;
-  }
-  .url-link {
-    color: blue;
-    text-decoration: underline;
-    cursor: pointer;
-  }
-  .row3 { display: flex; gap: 6px; }
-  .row3 > * { flex: 1; }
-  .entry {
-    font-size: 16px;
-    margin-top: 4px;
-  }
-  .top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    grid-column: 1 / -1;
-  }
-  .top-bar button {
-    font-size: 14px;
-    padding: 4px 10px;
-    cursor: pointer;
-  }
-  /* 小型状态提示 */
-  #autoSaveStatus {
-    font-size:12px;
-    color:#666;
-    margin-left:8px;
-  }
-  /* datalist 下拉按钮兼容 */
-  .with-datalist::-webkit-calendar-picker-indicator {
-    display: none !important;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>盆栽成本记录系统 Lover Legend Gardening</title>
+  <style>
+    body { font-family: sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }
+    .header { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+    .header img { height: 50px; }
+    .header h1 { font-size: 24px; margin: 0; }
+    form {
+      background: #fff; padding: 20px; border-radius: 12px; max-width: 1000px; margin: auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px;
+    }
+    label { font-weight: bold; }
+    input, select { padding: 8px; font-size: 16px; }
+    input[disabled] { background-color: #eee; }
+    .full { grid-column: 1 / -1; }
+    .entry { font-size: 16px; margin-top: 4px; }
+  </style>
 </head>
 <body>
   <div class="header">
     <img src="logo.png" alt="logo">
     <h1>盆栽成本记录系统 Lover Legend Gardening</h1>
   </div>
-
-  <form id="bonsaiForm" autocomplete="off">
-    <!-- 🌱 盆栽资料（含内陆发货信息） -->
-    <div class="top-bar">
-      <h2>🌱 盆栽资料（含内陆发货信息）</h2>
-      <div>
-        <span id="autoSaveStatus"></span>
-        <button type="button" onclick="manualSave()">📂 手动储存全部资料</button>
-      </div>
-    </div>
-
-    <label for="supplier">供应商</label><label for="variety">品种</label>
-    <!-- datalist for 历史 -->
-    <input id="supplier" list="supplierHistory" class="with-datalist" />
-    <input id="variety"  list="varietyHistory"  class="with-datalist" />
+  <form id="bonsaiForm">
+    <label>供应商</label>
+    <input id="supplier" list="supplierHistory">
+    <label>品种</label>
+    <input id="variety" list="varietyHistory">
     <datalist id="supplierHistory"></datalist>
     <datalist id="varietyHistory"></datalist>
 
-    <label>币值 + 单价（原币）+ RM 本钱</label><label for="quantity">数量（棵）</label>
-    <div class="row3">
-      <select id="currency">
-        <option value="CNY">CNY</option>
-        <option value="VND">VND</option>
-        <option value="NTD">NTD</option>
-        <option value="IDR">IDR</option>
-      </select>
-      <input id="price" type="text" inputmode="decimal" placeholder="0.00" />
-      <input id="price_rm" disabled placeholder="0.00" />
-    </div>
-    <input id="quantity" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
+    <label>币值</label>
+    <select id="currency">
+      <option value="CNY">CNY</option>
+      <option value="NTD">NTD</option>
+      <option value="VND">VND</option>
+      <option value="IDR">IDR</option>
+    </select>
+    <label>单价（原币）</label>
+    <input id="price" type="text" inputmode="decimal" placeholder="0.00">
+    <label>RM 本钱</label>
+    <input id="price_rm" type="text" disabled placeholder="0.00">
+    <label>数量</label>
+    <input id="quantity" type="number" inputmode="numeric" placeholder="0">
 
-    <label for="image_url">图片网址</label><label for="shipment_id">发货单号</label>
-    <input id="image_url" type="url" class="url-link" placeholder="https://..." onclick="openImageUrl(this)" />
-    <input id="shipment_id" placeholder="例如 2025CNY01" />
+    <label>图片网址</label>
+    <input id="image_url" type="url">
+    <label>发货单号</label>
+    <input id="shipment_id">
 
-    <!-- 🚛 发货资料 -->
-    <h2 class="full">🚛 发货资料</h2>
+    <label>发货总数</label>
+    <input id="total_plants" type="number" disabled>
+    <label>发货总金额（RM）</label>
+    <input id="total_amount" type="text" disabled>
 
-    <label for="total_plants">发货总数</label><label for="total_amount">发货总金额（RM自动）</label>
-    <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
-    <input id="total_amount" disabled placeholder="0.00" />
-
-    <label for="warehouse_date">包装明细（木架，箱子）</label><label for="warehouse_date">抵达仓库日期</label>
-    <input id="packing" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
-    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" />
-
-    <label for="container_date">装柜日期</label><label for="shipping_no">海运单号</label>
-    <input id="container_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="shipping_no" />
-
-    <label for="arrival_date">抵达日期</label><label for="freight_fee">运费（RM）</label>
-    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
-    <input id="freight_fee" type="text" inputmode="decimal" placeholder="0.00" />
-
-    <label for="days">运输天数</label><label for="freight_ratio">运费比例（自动）</label>
-    <input id="days" disabled placeholder="0" />
-    <input id="freight_ratio" disabled placeholder="0%" />
-
-    <!-- 🧾 成本与销售细节 -->
-    <h2 class="full">🧾 成本与销售细节</h2>
-
-    <label for="local">本地运输</label><label for="moss">苔藓</label>
-    <input id="local" type="text" inputmode="decimal" placeholder="0.00" />
-    <input id="moss"  type="text" inputmode="decimal" placeholder="0.00" />
-
-    <label for="pot">花盆</label><label for="base_cost">原成本</label>
-    <input id="pot"  type="text" inputmode="decimal" placeholder="0.00" />
-    <input id="base_cost" disabled placeholder="0.00" />
+    <label>运费（RM）</label>
+    <input id="freight_fee" type="text">
+    <label>运费比例</label>
+    <input id="freight_ratio" type="text" disabled>
 
     <div id="priceSummary" class="full"></div>
+
+    <button type="button" onclick="manualSave()">储存</button>
   </form>
 
 <script>
-/* ------------------------ 基本设定 ------------------------ */
-const firebaseConfig = {
-  apiKey: "AIzaSyCKQFkAz5jcTvCAMUpWSJ1nuEP8mEE-l18",
-  authDomain: "bonsai-live-system.firebaseapp.com",
-  projectId: "bonsai-live-system",
-  storageBucket: "bonsai-live-system.appspot.com",
-  messagingSenderId: "804874268810",
-  appId: "1:804874268810:web:9d1ede421c16643d01fd73"
-};
+// ✅ 汇率设定
+const rateMap = { CNY: 1/1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
 
-// 正确汇率 → RM： 1 单位外币 * rate = RM
-// 你给的：CNY=1/1.55, NTD=0.15, VND=0.00018, IDR=0.00028
-const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
+// ✅ 快捷函数
+const formatCurrency = n => parseFloat(n||0).toLocaleString('en-MY', { minimumFractionDigits: 2 });
+const formatPercent = n => (parseFloat(n||0)*100).toFixed(2) + '%';
+const parseNum = v => parseFloat((v || '').toString().replace(/,/g, '')) || 0;
 
-/* ------------------------ Firebase 初始化 ------------------------ */
-let app, db;
-(async function initFirebase(){
-  try {
-    // 动态加载 Firebase CDN（仅在浏览器，无 Node 打包顾虑）
-    await loadScript("https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js");
-    await loadScript("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore-compat.js");
-    app = firebase.initializeApp(firebaseConfig);
-    db  = firebase.firestore();
-    console.log("🔥 Firebase 初始化完成");
-  } catch(err){
-    console.error("Firebase 初始化失败：", err);
-    alert("Firebase 初始化失败，请检查网络或配置。");
-  }
-})();
-
-/* ------------------------ 工具函数 ------------------------ */
-function loadScript(src){
-  return new Promise((resolve, reject)=>{
-    const s=document.createElement('script');
-    s.src=src; s.onload=resolve; s.onerror=reject;
-    document.head.appendChild(s);
-  });
-}
-
-function openImageUrl(el){
-  if(el.value && el.value.startsWith('http')) window.open(el.value, '_blank');
-}
-
-function stripCommas(v){ return v ? v.toString().replace(/,/g,'').trim() : ''; }
-
-function parseNum(v){
-  const num=parseFloat(stripCommas(v));
-  return isNaN(num)?0:num;
-}
-
-function formatCurrency(val){
-  const num = parseFloat(stripCommas(val));
-  if(isNaN(num)) return '';
-  return num.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
-}
-
-function formatPercent(val){
-  if(isNaN(val)) return '0%';
-  return (val*100).toFixed(2)+'%';
-}
-
-function todayDDMMYY(){
-  const now=new Date();
-  const dd=String(now.getDate()).padStart(2,'0');
-  const mm=String(now.getMonth()+1).padStart(2,'0');
-  const yy=String(now.getFullYear()).slice(-2);
-  return `${dd}/${mm}/${yy}`;
-}
-
-function parseDDMMYY(str){
-  if(!str) return null;
-  const [d,m,y]=str.split('/').map(n=>parseInt(n,10));
-  if(isNaN(d)||isNaN(m)||isNaN(y)) return null;
-  // assume 20xx
-  const fullY = 2000 + y;
-  const dt=new Date(fullY, m-1, d);
-  // quick range checks
-  if(dt.getFullYear()!==fullY || dt.getMonth()!==m-1 || dt.getDate()!==d) return null;
-  return dt;
-}
-
-/* ------------------------ DOM 取值 ------------------------ */
-const elSupplier     = document.getElementById('supplier');
-const elVariety      = document.getElementById('variety');
-const elCurrency     = document.getElementById('currency');
-const elPrice        = document.getElementById('price');
-const elPriceRM      = document.getElementById('price_rm');
-const elQuantity     = document.getElementById('quantity');
-const elImageUrl     = document.getElementById('image_url');
-const elShipmentId   = document.getElementById('shipment_id');
-const elTotalPlants  = document.getElementById('total_plants');
-const elTotalAmount  = document.getElementById('total_amount');
-const elPacking      = document.getElementById('packing');
-const elWarehouseDt  = document.getElementById('warehouse_date');
-const elContainerDt  = document.getElementById('container_date');
-const elShippingNo   = document.getElementById('shipping_no');
-const elArrivalDt    = document.getElementById('arrival_date');
-const elFreightFee   = document.getElementById('freight_fee');
-const elDays         = document.getElementById('days');
+// ✅ 元素
+const elForm = document.getElementById('bonsaiForm');
+const elSupplier = document.getElementById('supplier');
+const elVariety = document.getElementById('variety');
+const elCurrency = document.getElementById('currency');
+const elPrice = document.getElementById('price');
+const elPriceRM = document.getElementById('price_rm');
+const elQuantity = document.getElementById('quantity');
+const elShipmentId = document.getElementById('shipment_id');
+const elTotalPlants = document.getElementById('total_plants');
+const elTotalAmount = document.getElementById('total_amount');
+const elFreightFee = document.getElementById('freight_fee');
 const elFreightRatio = document.getElementById('freight_ratio');
-const elLocal        = document.getElementById('local');
-const elMoss         = document.getElementById('moss');
-const elPot          = document.getElementById('pot');
-const elBaseCost     = document.getElementById('base_cost');
 const elPriceSummary = document.getElementById('priceSummary');
-const elAutoSaveStatus = document.getElementById('autoSaveStatus');
 
-/* ------------------------ 历史下拉 (localStorage) ------------------------ */
-const SUPPLIER_STORE_KEY = 'bonsai_supplier_history_v1';
-const VARIETY_STORE_KEY  = 'bonsai_variety_history_v1';
-
-function loadHistoryOptions(){
-  const supers = JSON.parse(localStorage.getItem(SUPPLIER_STORE_KEY)||'[]');
-  const vars   = JSON.parse(localStorage.getItem(VARIETY_STORE_KEY)||'[]');
-  fillDatalist('supplierHistory',supers);
-  fillDatalist('varietyHistory',vars);
-}
-
-function fillDatalist(id,arr){
-  const dl=document.getElementById(id);
-  dl.innerHTML='';
-  arr.forEach(v=>{
-    const opt=document.createElement('option');
-    opt.value=v;
-    dl.appendChild(opt);
-  });
-}
-
-function addToHistory(id,key){
-  const raw=key.trim();
-  if(!raw) return;
-  const storeKey = id==='supplier'?SUPPLIER_STORE_KEY:VARIETY_STORE_KEY;
-  const arr=JSON.parse(localStorage.getItem(storeKey)||'[]');
-  if(!arr.includes(raw)){
-    arr.push(raw);
-    arr.sort();
-    localStorage.setItem(storeKey,JSON.stringify(arr));
-    loadHistoryOptions();
-  }
-}
-loadHistoryOptions();
-
-/* ------------------------ 价格 / 汇率 & 利润售价 ------------------------ */
-function updateRM(){
-  const cur=elCurrency.value;
-  const raw=parseNum(elPrice.value);
-  const rate=rateMap[cur]||0;
-  const rm=raw*rate;
-  elPriceRM.value=isNaN(rm)?'':formatCurrency(rm);
+// ✅ 汇率更新与利润售价
+function updateRM() {
+  const rate = rateMap[elCurrency.value] || 0;
+  const rm = parseNum(elPrice.value) * rate;
+  elPriceRM.value = formatCurrency(rm);
   updateSalesPrices(rm);
-  updateTotalAmount(); // 牵动发货总金额
-  updateBaseCost();    // 成本区
 }
 
-function updateSalesPrices(rmCostPerPlant){
-  // 保留原逻辑倍数 (不变)
-  const prices={
-    "20%": rmCostPerPlant * 1.26 * 1.12,
-    "30%": rmCostPerPlant * 1.43 * 1.12,
-    "40%": rmCostPerPlant * 1.67 * 1.12,
-    "45%": rmCostPerPlant * 1.82 * 1.12,
-    "50%": rmCostPerPlant * 2.00 * 1.12,
-    "55%": rmCostPerPlant * 2.23 * 1.12
+function updateSalesPrices(rm) {
+  const prices = {
+    '20%': rm * 1.26 * 1.12,
+    '30%': rm * 1.43 * 1.12,
+    '40%': rm * 1.67 * 1.12,
+    '45%': rm * 1.82 * 1.12,
+    '50%': rm * 2.00 * 1.12,
+    '55%': rm * 2.23 * 1.12,
   };
-  let html  = `<div class="entry"><strong>20% 利润售价：</strong>RM ${formatCurrency(prices["20%"])}</div>`;
-  html     += `<div class="entry"><strong>30% 利润售价：</strong>RM ${formatCurrency(prices["30%"])}</div>`;
-  html     += `<div class="entry"><strong>40% 利润售价：</strong>RM ${formatCurrency(prices["40%"])}</div>`;
-  html     += `<div class="entry"><strong>45% 利润售价：</strong>RM ${formatCurrency(prices["45%"])}</div>`;
-  html     += `<div class="entry" style="color:red;font-weight:bold;"><strong>50% 利润售价：</strong>RM ${formatCurrency(prices["50%"])}</div>`;
-  html     += `<div class="entry"><strong>55% 利润售价：</strong>RM ${formatCurrency(prices["55%"])}</div>`;
-  elPriceSummary.innerHTML = html;
+  elPriceSummary.innerHTML = Object.entries(prices).map(([k, v]) =>
+    `<div class="entry"${k==='50%' ? ' style="color:red;font-weight:bold;"' : ''}><strong>${k} 利润售价：</strong>RM ${formatCurrency(v)}</div>`
+  ).join('');
 }
 
-/* ------------------------ 发货总金额（RM自动） ------------------------ */
-function updateTotalAmount(){
-  const totalPlants=parseNum(elTotalPlants.value);
-  const rmPerPlant=parseNum(elPriceRM.value);
-  const total = totalPlants * rmPerPlant;
-  elTotalAmount.value = total ? formatCurrency(total) : '';
-  updateFreightRatio();
-}
-
-/* ------------------------ 日期校验 ------------------------ */
-function validateDate(input){
-  // 自动补 "/" 格式
-  const rawDigits = input.value.replace(/[^0-9]/g,'');
-  if(!input.value.trim()){
-    input.value = todayDDMMYY();
-  }else if(rawDigits.length===6){
-    input.value = rawDigits.replace(/(\d{2})(\d{2})(\d{2})/,'$1/$2/$3');
-  }
-
-  const dt=parseDDMMYY(input.value);
-  if(!dt){
-    input.classList.add('error');
-    input.setCustomValidity('请输入有效日期');
-    input.reportValidity();
-    return false;
-  }else{
-    input.classList.remove('error');
-    input.setCustomValidity('');
-    // 如果是抵达日期或装柜日期更新 → 重算运输天数
-    if(input===elContainerDt || input===elArrivalDt) updateDays();
-    return true;
-  }
-}
-
-/* ------------------------ 运输天数 & 运费比例 ------------------------ */
-function updateDays(){
-  const cdt=parseDDMMYY(elContainerDt.value);
-  const adt=parseDDMMYY(elArrivalDt.value);
-  if(!cdt || !adt){
-    elDays.value='';
-    return;
-  }
-  let days = (adt - cdt)/(1000*60*60*24);
-  if(isNaN(days) || days<0) days=0;
-  elDays.value = Math.round(days);
-}
-
-function updateFreightRatio(){
+// ✅ 自动计算金额 + 汇总
+function updateFreightRatio() {
   const freight = parseNum(elFreightFee.value);
-  const total   = parseNum(elTotalAmount.value);
-  const ratio = total>0 ? (freight/total) : 0;
-  elFreightRatio.value = formatPercent(ratio);
+  const total = parseNum(elTotalAmount.value);
+  elFreightRatio.value = formatPercent(total ? freight / total : 0);
 }
 
-/* ------------------------ 成本区：原成本（RM） ------------------------ */
-function updateBaseCost(){
-  // 原成本 = (RM 本钱 × 数量) + 本地运输 + 苔藓 + 花盆
-  const rmPerPlant = parseNum(elPriceRM.value);
-  const qty        = parseNum(elQuantity.value);
-  const local      = parseNum(elLocal.value);
-  const moss       = parseNum(elMoss.value);
-  const pot        = parseNum(elPot.value);
-  const base = (rmPerPlant*qty) + local + moss + pot;
-  elBaseCost.value = base ? formatCurrency(base) : '';
-}
-
-/* ------------------------ 输入事件绑定 ------------------------ */
-// 汇率与 RM
-elCurrency.addEventListener('change', updateRM);
-elPrice.addEventListener('input', updateRM);
-elPrice.addEventListener('blur', ()=>{ elPrice.value=formatCurrency(elPrice.value); updateRM(); });
-elQuantity.addEventListener('input', updateBaseCost);
-
-// 发货总数 → 发货总金额
-elTotalPlants.addEventListener('input', updateTotalAmount);
-
-// 运费 → 运费比例
-elFreightFee.addEventListener('input', ()=>{ updateFreightRatio(); });
-elFreightFee.addEventListener('blur', ()=>{ elFreightFee.value=formatCurrency(elFreightFee.value); updateFreightRatio(); });
-
-// 本地运输/苔藓/花盆
-[elLocal,elMoss,elPot].forEach(el=>{
-  el.addEventListener('input', updateBaseCost);
-  el.addEventListener('blur', ()=>{
-    el.value=formatCurrency(el.value);
-    updateBaseCost();
-  });
-});
-
-// 日期 blur 校验
-[elWarehouseDt,elContainerDt,elArrivalDt].forEach(el=>{
-  el.addEventListener('blur', ()=>validateDate(el));
-});
-
-/* ------------------------ Enter 跳格 ------------------------ */
-const formFields = Array.from(document.querySelectorAll('#bonsaiForm input, #bonsaiForm select, #bonsaiForm textarea, #bonsaiForm button:not([type=button])'));
-formFields.forEach((el,i)=>{
-  el.addEventListener('keydown', e=>{
-    if(e.key==='Enter'){
-      // 对按钮不截
-      if(el.tagName==='BUTTON') return;
+// ✅ Enter 跳格 + 格式化
+const fields = Array.from(elForm.querySelectorAll('input, select'));
+fields.forEach((el, i) => {
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      // 日期校验
-      if(el.classList.contains('date-input')){
-        const ok=validateDate(el);
-        if(!ok) return; // 阻止跳格
+      if (["price", "freight_fee"].includes(el.id)) {
+        el.value = formatCurrency(el.value);
+        if (el.id === 'price') updateRM();
+        if (el.id === 'freight_fee') updateFreightRatio();
       }
-      // 金额类格式化（在跳格前）
-      const id=el.id;
-      if(['price','freight_fee','local','moss','pot'].includes(id)){
-        el.value=formatCurrency(el.value);
-      }
-      // 找下一个可聚焦元素
-      let next=i+1;
-      while(next<formFields.length && (formFields[next].disabled || formFields[next].type==='hidden')) next++;
-      if(formFields[next]) formFields[next].focus();
+      let next = i + 1;
+      while (fields[next] && (fields[next].disabled || fields[next].type === 'hidden')) next++;
+      if (fields[next]) fields[next].focus();
     }
   });
+  if (["price", "freight_fee"].includes(el.id)) {
+    el.addEventListener('blur', () => {
+      el.value = formatCurrency(el.value);
+      if (el.id === 'price') updateRM();
+      if (el.id === 'freight_fee') updateFreightRatio();
+    });
+  }
 });
 
-/* ------------------------ autoSave / manualSave 相关 ------------------------ */
-let lastAutoSaveTS=0;
-let formDirty=false;
-
-document.getElementById('bonsaiForm').addEventListener('input', ()=>{ formDirty=true; });
-
-function showAutoSaveStatus(txt,isError=false){
-  elAutoSaveStatus.textContent=txt;
-  elAutoSaveStatus.style.color=isError?'red':'#666';
-}
-
-async function manualSave(){
-  const ok = validateFormBeforeSave();
-  if(!ok){ alert('⚠️ 请先修正错误再储存。'); return; }
-  try{
-    await saveRecordToFirebase();
-    alert("✅ 资料已储存！");
-  }catch(err){
-    console.error(err);
-    alert("❌ 储存失败，请检查网络或配置。");
-  }
-}
-
-function validateFormBeforeSave(){
-  // 校验最核心字段（供应商、品种、币值、单价、数量、发货单号…）
-  if(!elSupplier.value.trim()){ alert('请输入供应商'); elSupplier.focus(); return false; }
-  if(!elVariety.value.trim()){ alert('请输入品种'); elVariety.focus(); return false; }
-  // 自动补日期但需验证
-  [elWarehouseDt,elContainerDt,elArrivalDt].forEach(el=>{ if(!validateDate(el)){/* handled */} });
-  // 如果日期有 error class 则不保存
-  if(document.querySelector('.error')) return false;
-  return true;
-}
-
-/* ------------------------ 保存到 Firebase（仅 15 字段） ------------------------ */
-async function saveRecordToFirebase(){
-  if(!db){ throw new Error('Firebase Firestore 未初始化'); }
-  const docData = {
-    supplier: elSupplier.value.trim() || '',
-    variety: elVariety.value.trim()  || '',
-    currency: elCurrency.value,
-    unit_price_foreign: parseNum(elPrice.value),   // 单价（原币）
-    unit_price_rm: parseNum(elPriceRM.value),      // RM 本钱（单棵）
-    quantity: parseNum(elQuantity.value),
-    shipment_id: elShipmentId.value.trim() || '',
-    total_plants: parseNum(elTotalPlants.value),
-    total_amount_rm: parseNum(elTotalAmount.value), // 发货总金额（RM自动）
-    container_date: elContainerDt.value.trim(),
-    arrival_date: elArrivalDt.value.trim(),
-    transit_days: parseNum(elDays.value),
-    freight_rm: parseNum(elFreightFee.value),
-    freight_ratio: elFreightRatio.value.trim(), // % 字符串保留
-    image_url: elImageUrl.value.trim(),
-    // 额外保存仓库日期 & packing & shipping_no 供参考（未列 15 字段中但不影响）
-    warehouse_date: elWarehouseDt.value.trim(),
-    packing: parseNum(elPacking.value),
-    shipping_no: elShippingNo.value.trim(),
-    created_at: new Date().toISOString()
-  };
-
-  // 使用自动 doc（你未要求指定 doc id）
-  await db.collection('bonsai_records').add(docData);
-
-  // 写入 localStorage 历史
-  addToHistory('supplier', elSupplier.value);
-  addToHistory('variety',  elVariety.value);
-
-  formDirty=false;
-  lastAutoSaveTS=Date.now();
-  showAutoSaveStatus('已储存 '+new Date().toLocaleTimeString(),'#666');
-
-  // 自动分组统计
-  aggregateShipments();
-}
-
-/* ------------------------ 每 3 分钟自动储存 ------------------------ */
-const AUTO_SAVE_INTERVAL = 3 * 60 * 1000; // 3分钟
-setInterval(async()=>{
-  if(!formDirty) return;
-  const ok=validateFormBeforeSave();
-  if(!ok){ showAutoSaveStatus('自动储存失败：表单未通过验证',true); return; }
-  try{
-    await saveRecordToFirebase();
-    showAutoSaveStatus('自动储存完成 '+new Date().toLocaleTimeString());
-  }catch(err){
-    console.error('自动储存失败',err);
-    showAutoSaveStatus('自动储存失败',true);
-  }
-}, AUTO_SAVE_INTERVAL);
-
-/* ------------------------ 相同发货单号自动汇总（前端） ------------------------ */
-/* 说明：
-   - 每次保存后，从 Firestore 抓取最近 500 笔（可调），
-     以 shipment_id 分组，计算
-       sum(total_plants) / sum(quantity) 作为发货总数（择优）
-       sum(total_amount_rm) 如果你后续想改为 “∑(unit_price_rm * quantity)” 可以
-   - 当前仅 console.log，不改变现有 UI 字段，避免破坏布局。
-*/
-async function aggregateShipments(){
-  if(!db) return;
-  try{
-    const snap=await db.collection('bonsai_records').orderBy('created_at','desc').limit(500).get();
-    const groups={};
-    snap.forEach(doc=>{
-      const d=doc.data();
-      const sid=d.shipment_id||'';
-      if(!groups[sid]) groups[sid]={plants:0,amount:0,rows:0};
-      // 如果 total_plants ==0 则 fallback quantity
-      const p = d.total_plants>0?d.total_plants:d.quantity;
-      const amt = d.total_amount_rm>0?d.total_amount_rm:(d.unit_price_rm * p);
-      groups[sid].plants += p;
-      groups[sid].amount += amt;
-      groups[sid].rows++;
-    });
-    console.log('📦 发货单号汇总：',groups);
-    // 你若想把汇总写回每笔 doc，可在此 iterate 更新；目前不修改 Firestore
-  }catch(err){
-    console.error('汇总失败',err);
-  }
-}
-
-/* ------------------------ 初始化：默认今天日期 & 初始计算 ------------------------ */
-(function initDefaults(){
-  // 日期默认今天（不覆盖已有）
-  [elWarehouseDt,elContainerDt,elArrivalDt].forEach(el=>{
-    if(!el.value) el.value=todayDDMMYY();
-  });
-  updateRM();
-  updateBaseCost();
-  updateTotalAmount();
-  updateFreightRatio();
-  updateDays();
-})();
-
-/* ------------------------ 页面加载后自动聚焦第一个字段 ------------------------ */
-window.addEventListener('load',()=>{ elSupplier.focus(); });
-
+// ✅ 自动更新 RM
+elCurrency.addEventListener('change', updateRM);
+elPrice.addEventListener('input', updateRM);
 </script>
 </body>
 </html>
