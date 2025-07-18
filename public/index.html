@@ -119,6 +119,23 @@
     grid-column: 1 / -1;
     display: none;
   }
+  /* 发货状态样式 */
+  .shipping-status {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  .status-purchased {
+    background-color: #ffeb3b;
+    color: #000;
+  }
+  .status-shipped {
+    background-color: #4caf50;
+    color: white;
+  }
 </style>
 </head>
 <body>
@@ -130,6 +147,9 @@
   <form id="bonsaiForm" autocomplete="off">
     <!-- 隐藏状态字段 -->
     <input type="hidden" id="record_status" value="purchased">
+    
+    <!-- 状态显示 -->
+    <div id="statusDisplay" class="shipping-status status-purchased">状态：购买记录</div>
     
     <!-- 🌱 盆栽资料（含内陆发货信息） -->
     <div class="top-bar">
@@ -171,18 +191,18 @@
     <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" readonly />
     <input id="total_amount" disabled placeholder="0.00" />
 
-    <label for="warehouse_date">包装明细（木架，箱子）</label><label for="warehouse_date">抵达仓库日期</label>
-    <input id="packing" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" readonly />
-    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" />
+    <label for="packing">包装明细（木架，箱子）</label><label for="warehouse_date">抵达仓库日期</label>
+    <input id="packing" type="text" placeholder="例如：1木架2箱子" readonly />
+    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" readonly />
     <div id="warehouse_date_error" class="date-error">请输入有效的日期格式 (DD/MM/YY)</div>
 
     <label for="container_date">装柜日期</label><label for="shipping_no">海运单号</label>
-    <input id="container_date" class="date-input" placeholder="DD/MM/YY" />
+    <input id="container_date" class="date-input" placeholder="DD/MM/YY" readonly />
     <div id="container_date_error" class="date-error">请输入有效的日期格式 (DD/MM/YY)</div>
     <input id="shipping_no" readonly />
 
     <label for="arrival_date">抵达日期</label><label for="freight_fee">运费（RM）</label>
-    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
+    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" readonly />
     <div id="arrival_date_error" class="date-error">请输入有效的日期格式 (DD/MM/YY)</div>
     <input id="freight_fee" type="text" inputmode="decimal" placeholder="0.00" readonly />
 
@@ -315,6 +335,7 @@ const elBaseCost     = document.getElementById('base_cost');
 const elPriceSummary = document.getElementById('priceSummary');
 const elAutoSaveStatus = document.getElementById('autoSaveStatus');
 const elRecordStatus = document.getElementById('record_status');
+const elStatusDisplay = document.getElementById('statusDisplay');
 
 // 日期错误提示元素
 const elWarehouseDtError = document.getElementById('warehouse_date_error');
@@ -456,12 +477,6 @@ function updateBaseCost(){
 
 /* ------------------------ 标记为已发货 ------------------------ */
 function markAsShipped() {
-  if (!elShipmentId.value.trim()) {
-    alert('请填写发货单号');
-    elShipmentId.focus();
-    return;
-  }
-  
   // 启用发货相关字段
   document.getElementById('shipment_id').readOnly = false;
   document.getElementById('total_plants').readOnly = false;
@@ -478,6 +493,8 @@ function markAsShipped() {
   
   // 更新状态
   document.getElementById('record_status').value = 'shipped';
+  elStatusDisplay.textContent = '状态：已发货';
+  elStatusDisplay.className = 'shipping-status status-shipped';
   
   alert('已标记为发货状态，请填写完整发货信息后保存');
 }
@@ -606,6 +623,7 @@ async function saveRecordToFirebase(){
     docData.shipment_id = elShipmentId.value.trim() || '';
     docData.total_plants = parseNum(elTotalPlants.value);
     docData.total_amount_rm = parseNum(elPriceRM.value) * parseNum(elQuantity.value);
+    docData.packing = elPacking.value.trim();
     
     // 添加其他发货相关信息
     docData.container_date = elContainerDt.value.trim();
@@ -615,7 +633,6 @@ async function saveRecordToFirebase(){
     docData.freight_ratio = elFreightRatio.value.trim();
     docData.image_url = elImageUrl.value.trim();
     docData.warehouse_date = elWarehouseDt.value.trim();
-    docData.packing = parseNum(elPacking.value);
     docData.shipping_no = elShippingNo.value.trim();
   }
 
