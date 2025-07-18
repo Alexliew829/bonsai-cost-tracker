@@ -110,6 +110,15 @@
   #markAsShipped:hover {
     background-color: #45a049;
   }
+  /* 日期错误提示 */
+  .date-error {
+    color: red;
+    font-size: 12px;
+    margin-top: -10px;
+    margin-bottom: 5px;
+    grid-column: 1 / -1;
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -164,14 +173,17 @@
 
     <label for="warehouse_date">包装明细（木架，箱子）</label><label for="warehouse_date">抵达仓库日期</label>
     <input id="packing" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" readonly />
-    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" readonly />
+    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" />
+    <div id="warehouse_date_error" class="date-error">请输入有效的日期格式 (DD/MM/YY)</div>
 
     <label for="container_date">装柜日期</label><label for="shipping_no">海运单号</label>
-    <input id="container_date" class="date-input" placeholder="DD/MM/YY" readonly />
+    <input id="container_date" class="date-input" placeholder="DD/MM/YY" />
+    <div id="container_date_error" class="date-error">请输入有效的日期格式 (DD/MM/YY)</div>
     <input id="shipping_no" readonly />
 
     <label for="arrival_date">抵达日期</label><label for="freight_fee">运费（RM）</label>
-    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" readonly />
+    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
+    <div id="arrival_date_error" class="date-error">请输入有效的日期格式 (DD/MM/YY)</div>
     <input id="freight_fee" type="text" inputmode="decimal" placeholder="0.00" readonly />
 
     <label for="days">运输天数</label><label for="freight_ratio">运费比例（自动）</label>
@@ -304,6 +316,11 @@ const elPriceSummary = document.getElementById('priceSummary');
 const elAutoSaveStatus = document.getElementById('autoSaveStatus');
 const elRecordStatus = document.getElementById('record_status');
 
+// 日期错误提示元素
+const elWarehouseDtError = document.getElementById('warehouse_date_error');
+const elContainerDtError = document.getElementById('container_date_error');
+const elArrivalDtError = document.getElementById('arrival_date_error');
+
 /* ------------------------ 历史下拉 (localStorage) ------------------------ */
 const SUPPLIER_STORE_KEY = 'bonsai_supplier_history_v1';
 const VARIETY_STORE_KEY  = 'bonsai_variety_history_v1';
@@ -347,7 +364,6 @@ function updateRM(){
   const rm=raw*rate;
   elPriceRM.value=isNaN(rm)?'':formatCurrency(rm);
   updateSalesPrices(rm);
-  updateTotalAmount(); // 牵动发货总金额
   updateBaseCost();    // 成本区
 }
 
@@ -380,7 +396,7 @@ function updateTotalAmount(){
 }
 
 /* ------------------------ 日期校验 ------------------------ */
-function validateDate(input){
+function validateDate(input, errorElement){
   // 自动补 "/" 格式
   const rawDigits = input.value.replace(/[^0-9]/g,'');
   if(!input.value.trim()){
@@ -392,11 +408,13 @@ function validateDate(input){
   const dt=parseDDMMYY(input.value);
   if(!dt){
     input.classList.add('error');
+    errorElement.style.display = 'block';
     input.setCustomValidity('请输入有效日期');
     input.reportValidity();
     return false;
   }else{
     input.classList.remove('error');
+    errorElement.style.display = 'none';
     input.setCustomValidity('');
     // 如果是抵达日期或装柜日期更新 → 重算运输天数
     if(input===elContainerDt || input===elArrivalDt) updateDays();
@@ -488,9 +506,9 @@ elFreightFee.addEventListener('blur', ()=>{ elFreightFee.value=formatCurrency(el
 });
 
 // 日期 blur 校验
-[elWarehouseDt,elContainerDt,elArrivalDt].forEach(el=>{
-  el.addEventListener('blur', ()=>validateDate(el));
-});
+elWarehouseDt.addEventListener('blur', ()=>validateDate(elWarehouseDt, elWarehouseDtError));
+elContainerDt.addEventListener('blur', ()=>validateDate(elContainerDt, elContainerDtError));
+elArrivalDt.addEventListener('blur', ()=>validateDate(elArrivalDt, elArrivalDtError));
 
 /* ------------------------ Enter 跳格 ------------------------ */
 const formFields = Array.from(document.querySelectorAll('#bonsaiForm input, #bonsaiForm select, #bonsaiForm textarea, #bonsaiForm button:not([type=button])'));
@@ -502,7 +520,12 @@ formFields.forEach((el,i)=>{
       e.preventDefault();
       // 日期校验
       if(el.classList.contains('date-input')){
-        const ok=validateDate(el);
+        let errorElement;
+        if(el === elWarehouseDt) errorElement = elWarehouseDtError;
+        else if(el === elContainerDt) errorElement = elContainerDtError;
+        else if(el === elArrivalDt) errorElement = elArrivalDtError;
+        
+        const ok=validateDate(el, errorElement);
         if(!ok) return; // 阻止跳格
       }
       // 金额类格式化（在跳格前）
@@ -549,10 +572,13 @@ function validateFormBeforeSave(){
   // 如果是发货状态，需要校验发货相关字段
   if(elRecordStatus.value === 'shipped') {
     if(!elShipmentId.value.trim()){ alert('请输入发货单号'); elShipmentId.focus(); return false; }
-    // 自动补日期但需验证
-    [elWarehouseDt,elContainerDt,elArrivalDt].forEach(el=>{ if(!validateDate(el)){/* handled */} });
-    // 如果日期有 error class 则不保存
-    if(document.querySelector('.error')) return false;
+    
+    // 校验所有日期
+    const warehouseValid = validateDate(elWarehouseDt, elWarehouseDtError);
+    const containerValid = validateDate(elContainerDt, elContainerDtError);
+    const arrivalValid = validateDate(elArrivalDt, elArrivalDtError);
+    
+    if(!warehouseValid || !containerValid || !arrivalValid) return false;
   }
   return true;
 }
