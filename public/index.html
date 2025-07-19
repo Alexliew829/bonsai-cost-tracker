@@ -96,6 +96,20 @@
   .with-datalist::-webkit-calendar-picker-indicator {
     display: none !important;
   }
+  /* 发货按钮样式 */
+  #markAsShipped {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    grid-column: 1 / -1;
+    margin-top: 10px;
+  }
+  #markAsShipped:hover {
+    background-color: #45a049;
+  }
   /* 日期错误提示 */
   .date-error {
     color: red;
@@ -103,6 +117,27 @@
     margin-top: -10px;
     margin-bottom: 5px;
     grid-column: 1 / -1;
+    display: none;
+  }
+  /* 发货状态样式 */
+  .shipping-status {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  .status-purchased {
+    background-color: #ffeb3b;
+    color: #000;
+  }
+  .status-shipped {
+    background-color: #4caf50;
+    color: white;
+  }
+  /* 发货相关字段 */
+  .shipping-field {
     display: none;
   }
 </style>
@@ -114,15 +149,23 @@
   </div>
 
   <form id="bonsaiForm" autocomplete="off">
+    <!-- 隐藏状态字段 -->
+    <input type="hidden" id="record_status" value="purchased">
+    
+    <!-- 状态显示 -->
+    <div id="statusDisplay" class="shipping-status status-purchased">状态：采购记录</div>
+    
+    <!-- 🌱 盆栽资料（采购信息） -->
     <div class="top-bar">
-      <h2>🌱 盆栽资料（含内陆发货信息）</h2>
+      <h2>🌱 盆栽采购资料</h2>
       <div>
         <span id="autoSaveStatus"></span>
-        <button type="button" onclick="manualSave()">📂 手动储存全部资料</button>
+        <button type="button" onclick="manualSave()">📂 手动储存采购资料</button>
       </div>
     </div>
 
     <label for="supplier">供应商</label><label for="variety">品种</label>
+    <!-- datalist for 历史 -->
     <input id="supplier" list="supplierHistory" class="with-datalist" />
     <input id="variety"  list="varietyHistory"  class="with-datalist" />
     <datalist id="supplierHistory"></datalist>
@@ -141,35 +184,43 @@
     </div>
     <input id="quantity" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
 
-    <label for="image_url">图片网址</label><label for="shipment_id">发货单号</label>
+    <label for="image_url">图片网址</label>
+    <div class="full"></div> <!-- 占位 -->
     <input id="image_url" type="url" class="url-link" placeholder="https://..." onclick="openImageUrl(this)" />
-    <input id="shipment_id" placeholder="例如 2025CNY01" />
+    
+    <!-- 🚛 发货资料 (初始隐藏) -->
+    <div id="shippingFields" class="shipping-field">
+      <h2 class="full">🚛 发货资料</h2>
 
-    <h2 class="full">🚛 发货资料</h2>
+      <label for="shipment_id">发货单号</label><label for="total_plants">发货总数</label>
+      <input id="shipment_id" placeholder="例如 2025CNY01" />
+      <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
 
-    <label for="total_plants">发货总数</label><label for="total_amount">发货总金额（RM自动）</label>
-    <input id="total_plants" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
-    <input id="total_amount" disabled placeholder="0.00" />
+      <label for="total_amount">发货总金额（RM自动）</label><label for="packing">包装明细（木架，箱子）</label>
+      <input id="total_amount" disabled placeholder="0.00" />
+      <input id="packing" placeholder="例如：1木架2箱子" />
 
-    <label for="packing">包装明细（木架，箱子）</label><label for="warehouse_date">抵达仓库日期</label>
-    <input id="packing" placeholder="例如：1木架2箱子" />
-    <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" />
-    <div id="warehouse_date_error" class="date-error">请输入有效日期 (DD/MM/YY)</div>
+      <label for="warehouse_date">抵达仓库日期</label><label for="container_date">装柜日期</label>
+      <input id="warehouse_date" class="date-input" placeholder="DD/MM/YY" />
+      <div id="warehouse_date_error" class="date-error">请输入有效的日期格式 (DD/MM/YY)</div>
+      <input id="container_date" class="date-input" placeholder="DD/MM/YY" />
+      <div id="container_date_error" class="date-error">请输入有效的日期格式 (DD/MM/YY)</div>
 
-    <label for="container_date">装柜日期</label><label for="shipping_no">海运单号</label>
-    <input id="container_date" class="date-input" placeholder="DD/MM/YY" />
-    <div id="container_date_error" class="date-error">请输入有效日期 (DD/MM/YY)</div>
-    <input id="shipping_no" />
+      <label for="shipping_no">海运单号</label><label for="arrival_date">抵达日期</label>
+      <input id="shipping_no" />
+      <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
+      <div id="arrival_date_error" class="date-error">请输入有效的日期格式 (DD/MM/YY)</div>
 
-    <label for="arrival_date">抵达日期</label><label for="freight_fee">运费（RM）</label>
-    <input id="arrival_date" class="date-input" placeholder="DD/MM/YY" />
-    <div id="arrival_date_error" class="date-error">请输入有效日期 (DD/MM/YY)</div>
-    <input id="freight_fee" type="text" inputmode="decimal" placeholder="0.00" />
+      <label for="freight_fee">运费（RM）</label><label for="days">运输天数</label>
+      <input id="freight_fee" type="text" inputmode="decimal" placeholder="0.00" />
+      <input id="days" disabled placeholder="0" />
 
-    <label for="days">运输天数</label><label for="freight_ratio">运费比例（自动）</label>
-    <input id="days" disabled placeholder="0" />
-    <input id="freight_ratio" disabled placeholder="0%" />
+      <label for="freight_ratio">运费比例（自动）</label>
+      <div class="full"></div> <!-- 占位 -->
+      <input id="freight_ratio" disabled placeholder="0%" />
+    </div>
 
+    <!-- 🧾 成本与销售细节 -->
     <h2 class="full">🧾 成本与销售细节</h2>
 
     <label for="local">本地运输</label><label for="moss">苔藓</label>
@@ -181,6 +232,9 @@
     <input id="base_cost" disabled placeholder="0.00" />
 
     <div id="priceSummary" class="full"></div>
+    
+    <!-- 发货按钮 -->
+    <button type="button" id="markAsShipped" onclick="markAsShipped()">标记为已发货</button>
   </form>
 
 <script>
@@ -194,6 +248,7 @@ const firebaseConfig = {
   appId: "1:804874268810:web:9d1ede421c16643d01fd73"
 };
 
+// 正确汇率 → RM： 1 单位外币 * rate = RM
 const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
 
 /* ------------------------ Firebase 初始化 ------------------------ */
@@ -277,6 +332,9 @@ const elPot = document.getElementById('pot');
 const elBaseCost = document.getElementById('base_cost');
 const elPriceSummary = document.getElementById('priceSummary');
 const elAutoSaveStatus = document.getElementById('autoSaveStatus');
+const elRecordStatus = document.getElementById('record_status');
+const elStatusDisplay = document.getElementById('statusDisplay');
+const elShippingFields = document.getElementById('shippingFields');
 
 // 日期错误提示元素
 const elWarehouseDtError = document.getElementById('warehouse_date_error');
@@ -326,8 +384,8 @@ function updateRM(){
   const rm=raw*rate;
   elPriceRM.value=isNaN(rm)?'':formatCurrency(rm);
   updateSalesPrices(rm);
-  updateTotalAmount();
   updateBaseCost();
+  updateTotalAmount();
 }
 
 function updateSalesPrices(rmCostPerPlant){
@@ -415,6 +473,30 @@ function updateBaseCost(){
   elBaseCost.value = base ? formatCurrency(base) : '';
 }
 
+/* ------------------------ 标记为已发货 ------------------------ */
+function markAsShipped() {
+  // 验证必填字段
+  if(!elSupplier.value.trim()) { alert('请先填写供应商'); return; }
+  if(!elVariety.value.trim()) { alert('请先填写品种'); return; }
+  if(!elPrice.value.trim()) { alert('请先填写单价'); return; }
+  if(!elQuantity.value.trim()) { alert('请先填写数量'); return; }
+  
+  // 显示发货相关字段
+  elShippingFields.style.display = 'grid';
+  
+  // 更新状态
+  document.getElementById('record_status').value = 'shipped';
+  elStatusDisplay.textContent = '状态：已发货';
+  elStatusDisplay.className = 'shipping-status status-shipped';
+  
+  // 自动填充发货总数
+  elTotalPlants.value = elQuantity.value;
+  updateTotalAmount();
+  
+  // 聚焦到发货单号字段
+  elShipmentId.focus();
+}
+
 /* ------------------------ 输入事件绑定 ------------------------ */
 elCurrency.addEventListener('change', updateRM);
 elPrice.addEventListener('input', updateRM);
@@ -491,20 +573,29 @@ async function manualSave(){
 }
 
 function validateFormBeforeSave(){
+  // 基本验证
   if(!elSupplier.value.trim()){ alert('请输入供应商'); elSupplier.focus(); return false; }
   if(!elVariety.value.trim()){ alert('请输入品种'); elVariety.focus(); return false; }
   
-  // 校验所有日期
-  const warehouseValid = validateDate(elWarehouseDt, elWarehouseDtError);
-  const containerValid = validateDate(elContainerDt, elContainerDtError);
-  const arrivalValid = validateDate(elArrivalDt, elArrivalDtError);
-  
-  if(!warehouseValid || !containerValid || !arrivalValid) return false;
+  // 如果是发货状态，验证发货相关字段
+  if(elRecordStatus.value === 'shipped') {
+    if(!elShipmentId.value.trim()){ alert('请输入发货单号'); elShipmentId.focus(); return false; }
+    
+    // 校验所有日期
+    const warehouseValid = validateDate(elWarehouseDt, elWarehouseDtError);
+    const containerValid = validateDate(elContainerDt, elContainerDtError);
+    const arrivalValid = validateDate(elArrivalDt, elArrivalDtError);
+    
+    if(!warehouseValid || !containerValid || !arrivalValid) return false;
+  }
   return true;
 }
 
 async function saveRecordToFirebase(){
   if(!db){ throw new Error('Firebase Firestore 未初始化'); }
+  
+  const recordStatus = elRecordStatus.value;
+  const isShipped = recordStatus === 'shipped';
   
   const docData = {
     supplier: elSupplier.value.trim() || '',
@@ -513,30 +604,41 @@ async function saveRecordToFirebase(){
     unit_price_foreign: parseNum(elPrice.value),
     unit_price_rm: parseNum(elPriceRM.value),
     quantity: parseNum(elQuantity.value),
-    shipment_id: elShipmentId.value.trim() || '',
-    total_plants: parseNum(elTotalPlants.value) || parseNum(elQuantity.value),
-    total_amount_rm: parseNum(elPriceRM.value) * (parseNum(elTotalPlants.value) || parseNum(elQuantity.value)),
-    packing: elPacking.value.trim(),
-    warehouse_date: elWarehouseDt.value.trim(),
-    container_date: elContainerDt.value.trim(),
-    shipping_no: elShippingNo.value.trim(),
-    arrival_date: elArrivalDt.value.trim(),
-    transit_days: parseNum(elDays.value),
-    freight_rm: parseNum(elFreightFee.value) || 0,
-    freight_ratio: elFreightRatio.value.trim(),
+    status: recordStatus,
     image_url: elImageUrl.value.trim(),
     created_at: new Date().toISOString()
   };
+  
+  // 如果是发货状态，添加发货相关信息
+  if (isShipped) {
+    docData.shipment_id = elShipmentId.value.trim() || '';
+    docData.total_plants = parseNum(elTotalPlants.value) || parseNum(elQuantity.value);
+    docData.total_amount_rm = parseNum(elPriceRM.value) * docData.total_plants;
+    docData.packing = elPacking.value.trim();
+    docData.warehouse_date = elWarehouseDt.value.trim();
+    docData.container_date = elContainerDt.value.trim();
+    docData.shipping_no = elShippingNo.value.trim();
+    docData.arrival_date = elArrivalDt.value.trim();
+    docData.transit_days = parseNum(elDays.value);
+    docData.freight_rm = parseNum(elFreightFee.value) || 0;
+    docData.freight_ratio = elFreightRatio.value.trim();
+  }
 
+  // 保存记录
   await db.collection('bonsai_records').add(docData);
 
+  // 写入 localStorage 历史
   addToHistory('supplier', elSupplier.value);
   addToHistory('variety', elVariety.value);
 
   formDirty = false;
   lastAutoSaveTS = Date.now();
   showAutoSaveStatus('已储存 ' + new Date().toLocaleTimeString(), '#666');
-  aggregateShipments();
+
+  // 如果是发货记录，更新汇总
+  if (isShipped) {
+    aggregateShipments();
+  }
 }
 
 /* ------------------------ 每 3 分钟自动储存 ------------------------ */
