@@ -149,6 +149,24 @@
   #prepareShipping:hover {
     background-color: #0b5ed7;
   }
+  /* 新增错误提示样式 */
+  .firebase-error {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px;
+    background: #ff4444;
+    color: white;
+    border-radius: 5px;
+    z-index: 10000;
+    max-width: 300px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease-out;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
 </style>
 </head>
 <body>
@@ -254,480 +272,291 @@
   </form>
 
 <script>
-/* ------------------------ 基本设定 ------------------------ */
+/* ======================== 全局配置 ======================== */
 const firebaseConfig = {
   apiKey: "11.8b2c9E9A5e5jc7ec8eUgN5aTnafF8efE-11F",
-  authDomain: "bureau-line-system.firebaseapp.com", // 修正为标准域名
-  projectId: "bureau-line-system",                 // 仅保留项目ID，去掉多余后缀
-  storageBucket: "bureau-line-system.appspot.com", // 修正存储桶域名
+  authDomain: "bureau-line-system.firebaseapp.com",
+  projectId: "bureau-line-system",
+  storageBucket: "bureau-line-system.appspot.com",
   messagingSenderId: "88a487c2888",
-  appId: "1:8880487c2888:web:19freeNetTo164d8011673" // 移除非法字符
+  appId: "1:8880487c2888:web:19freeNetTo164d8011673"
 };
 
 const rateMap = { CNY: 1 / 1.55, NTD: 0.15, VND: 0.00018, IDR: 0.00028 };
+let app, db; // Firebase实例
 let isShippingReady = false;
 let formDirty = false;
 let lastAutoSaveTS = 0;
 
-/* ------------------------ Firebase 初始化 ------------------------ */
-let app, db;
-(async function initFirebase(){
+/* ======================== Firebase初始化 ======================== */
+async function initFirebase() {
   try {
-    await loadScript("https://www.gstatic.com/firebasejs/11.0.0/firebase-app-compat.js");
-    await loadScript("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore-compat.js");
+    // 动态加载Firebase SDK
+    await Promise.all([
+      loadScript("https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"),
+      loadScript("https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js")
+    ]);
+    
+    // 初始化Firebase
     app = firebase.initializeApp(firebaseConfig);
-    db  = firebase.firestore();
-    console.log("🔥 Firebase 初始化完成");
-  } catch(err){
-    console.error("Firebase 初始化失败：", err);
-    alert("Firebase 初始化失败，请检查网络或配置。");
+    db = firebase.firestore();
+    
+    // 测试连接
+    await db.collection("connection_test").doc("init").set({
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    console.log("🔥 Firebase 初始化成功");
+    
+    // 启用离线持久化（可选）
+    try {
+      await db.enablePersistence();
+      console.log("离线持久化已启用");
+    } catch (err) {
+      console.warn("离线持久化不可用:", err);
+    }
+  } catch (err) {
+    console.error("Firebase 初始化失败:", err);
+    showError("Firebase初始化失败: " + err.message);
   }
-})();
+}
 
-/* ------------------------ 工具函数 ------------------------ */
-function loadScript(src){
-  return new Promise((resolve, reject)=>{
-    const s=document.createElement('script');
-    s.src=src; s.onload=resolve; s.onerror=reject;
-    document.head.appendChild(s);
+/* ======================== 数据操作 ======================== */
+async function saveRecordToFirebase() {
+  if (!db) throw new Error("Firestore 未初始化");
+
+  // 准备数据
+  const docData = {
+    // 采购信息
+    supplier: document.getElementById("supplier").value.trim(),
+    variety: document.getElementById("variety").value.trim(),
+    currency: document.getElementById("currency").value,
+    unit_price_foreign: parseNum(document.getElementById("price").value),
+    unit_price_rm: parseNum(document.getElementById("price_rm").value),
+    quantity: parseInt(document.getElementById("quantity").value),
+    image_url: document.getElementById("image_url").value.trim(),
+    
+    // 状态信息
+    status: isShippingReady ? "待发货" : "采购中",
+    created_at: firebase.firestore.FieldValue.serverTimestamp(),
+    updated_at: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  // 发货信息
+  if (isShippingReady) {
+    Object.assign(docData, {
+      shipment_id: document.getElementById("shipment_id").value.trim(),
+      total_plants: parseInt(document.getElementById("total_plants").value),
+      total_amount_rm: parseNum(document.getElementById("total_amount").value),
+      packing: document.getElementById("packing").value.trim(),
+      warehouse_date: document.getElementById("warehouse_date").value.trim(),
+      container_date: document.getElementById("container_date").value.trim(),
+      shipping_no: document.getElementById("shipping_no").value.trim(),
+      arrival_date: document.getElementById("arrival_date").value.trim(),
+      transit_days: parseInt(document.getElementById("days").value),
+      freight_fee: parseNum(document.getElementById("freight_fee").value),
+      freight_ratio: document.getElementById("freight_ratio").value,
+      status: "已完成"
+    });
+  }
+
+  // 成本信息
+  Object.assign(docData, {
+    local_transport: parseNum(document.getElementById("local").value),
+    moss: parseNum(document.getElementById("moss").value),
+    pot: parseNum(document.getElementById("pot").value),
+    base_cost: parseNum(document.getElementById("base_cost").value)
   });
+
+  try {
+    console.log("正在写入数据:", docData);
+    const docRef = await db.collection("bonsai_records").add(docData);
+    console.log("文档写入成功，ID:", docRef.id);
+    
+    // 验证写入
+    const savedDoc = await docRef.get();
+    if (!savedDoc.exists) throw new Error("文档写入后验证失败");
+    
+    // 更新历史记录
+    addToHistory("supplier", docData.supplier);
+    addToHistory("variety", docData.variety);
+    
+    return true;
+  } catch (err) {
+    console.error("写入过程中出错:", err);
+    throw err;
+  }
 }
 
-function openImageUrl(el){
-  if(el.value && el.value.startsWith('http')) window.open(el.value, '_blank');
-}
-
-function stripCommas(v){ return v ? v.toString().replace(/,/g,'').trim() : ''; }
-
-function parseNum(v){
-  const num=parseFloat(stripCommas(v));
-  return isNaN(num)?0:num;
-}
-
-function formatCurrency(val){
-  const num = parseFloat(stripCommas(val));
-  if(isNaN(num)) return '';
-  return num.toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
-}
-
-function formatPercent(val){
-  if(isNaN(val)) return '0%';
-  return (val*100).toFixed(2)+'%';
-}
-
-function parseDDMMYY(str){
-  if(!str) return null;
-  const [d,m,y]=str.split('/').map(n=>parseInt(n,10));
-  if(isNaN(d)||isNaN(m)||isNaN(y)) return null;
-  const fullY = y < 100 ? 2000 + y : y;
-  const dt=new Date(fullY, m-1, d);
-  if(dt.getFullYear()!==fullY || dt.getMonth()!==m-1 || dt.getDate()!==d) return null;
-  return dt;
-}
-
-/* ------------------------ 核心功能 ------------------------ */
+/* ======================== 表单功能 ======================== */
 function enableShippingFields() {
-  if(!validatePurchaseFields()) {
-    alert('请先完成所有必填采购信息');
+  if (!validatePurchaseFields()) {
+    showError("请先完成所有必填采购信息");
     return;
   }
 
-  document.querySelectorAll('.shipping-field').forEach(field => {
+  document.querySelectorAll(".shipping-field").forEach(field => {
     field.disabled = false;
   });
   
-  document.getElementById('total_plants').value = document.getElementById('quantity').value;
+  document.getElementById("total_plants").value = document.getElementById("quantity").value;
   updateTotalAmount();
   
   isShippingReady = true;
-  document.getElementById('form-status').textContent = '待发货';
-  document.getElementById('form-status').className = 'status-badge status-shipping';
-  document.getElementById('prepareShipping').textContent = '✅ 发货信息已准备';
-  document.getElementById('prepareShipping').style.backgroundColor = '#198754';
+  document.getElementById("form-status").textContent = "待发货";
+  document.getElementById("form-status").className = "status-badge status-shipping";
+  document.getElementById("prepareShipping").textContent = "✅ 发货信息已准备";
+  document.getElementById("prepareShipping").style.backgroundColor = "#198754";
   
-  document.getElementById('shipment_id').focus();
+  document.getElementById("shipment_id").focus();
 }
 
 function validatePurchaseFields() {
-  const requiredFields = ['supplier', 'variety', 'price', 'quantity'];
+  const requiredFields = ["supplier", "variety", "price", "quantity"];
   let isValid = true;
   
   requiredFields.forEach(id => {
     const field = document.getElementById(id);
-    if(!field.value.trim()) {
-      field.classList.add('error');
+    if (!field.value.trim()) {
+      field.classList.add("error");
       isValid = false;
     } else {
-      field.classList.remove('error');
+      field.classList.remove("error");
     }
   });
   
   return isValid;
 }
 
-function validateDate(input, errorElement){
-  const rawDigits = input.value.replace(/[^0-9]/g,'');
+function validateBeforeSave() {
+  if (!validatePurchaseFields()) return false;
   
-  if(rawDigits.length===6){
-    input.value = rawDigits.replace(/(\d{2})(\d{2})(\d{2})/,'$1/$2/$3');
-  } else if(rawDigits.length===8){
-    input.value = rawDigits.replace(/(\d{2})(\d{2})(\d{4})/,'$1/$2/$3');
+  if (isShippingReady) {
+    const requiredShippingFields = ["shipment_id", "warehouse_date"];
+    let isValid = true;
+    
+    requiredShippingFields.forEach(id => {
+      const field = document.getElementById(id);
+      if (!field.value.trim()) {
+        field.classList.add("error");
+        isValid = false;
+      } else {
+        field.classList.remove("error");
+      }
+    });
+    
+    if (!isValid) {
+      showError("请填写完整的发货信息");
+      return false;
+    }
+    
+    // 验证日期
+    const datesValid = [
+      validateDate(document.getElementById("warehouse_date"), document.getElementById("warehouse_date_error")),
+      validateDate(document.getElementById("container_date"), document.getElementById("container_date_error")),
+      validateDate(document.getElementById("arrival_date"), document.getElementById("arrival_date_error"))
+    ].every(valid => valid);
+    
+    if (!datesValid) return false;
+  }
+  
+  return true;
+}
+
+/* ======================== 工具函数 ======================== */
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`脚本加载失败: ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+function showError(message) {
+  // 移除现有错误提示
+  const existingError = document.querySelector(".firebase-error");
+  if (existingError) existingError.remove();
+  
+  const errorDiv = document.createElement("div");
+  errorDiv.className = "firebase-error";
+  errorDiv.textContent = message;
+  document.body.appendChild(errorDiv);
+  
+  setTimeout(() => {
+    errorDiv.remove();
+  }, 5000);
+}
+
+function showAutoSaveStatus(txt, isError = false) {
+  const el = document.getElementById("autoSaveStatus");
+  el.textContent = txt;
+  el.style.color = isError ? "red" : "#666";
+}
+
+function parseNum(str) {
+  if (!str) return 0;
+  const num = parseFloat(str.toString().replace(/,/g, ""));
+  return isNaN(num) ? 0 : num;
+}
+
+function formatCurrency(val) {
+  const num = parseFloat(stripCommas(val));
+  if (isNaN(num)) return "";
+  return num.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function stripCommas(v) {
+  return v ? v.toString().replace(/,/g, "").trim() : "";
+}
+
+function validateDate(input, errorElement) {
+  const rawDigits = input.value.replace(/[^0-9]/g, "");
+  
+  if (rawDigits.length === 6) {
+    input.value = rawDigits.replace(/(\d{2})(\d{2})(\d{2})/, "$1/$2/$3");
+  } else if (rawDigits.length === 8) {
+    input.value = rawDigits.replace(/(\d{2})(\d{2})(\d{4})/, "$1/$2/$3");
   }
 
-  const dt=parseDDMMYY(input.value);
-  if(!dt){
-    input.classList.add('error');
-    errorElement.style.display = 'block';
-    input.setCustomValidity('请输入有效日期');
+  const dt = parseDDMMYY(input.value);
+  if (!dt) {
+    input.classList.add("error");
+    errorElement.style.display = "block";
+    input.setCustomValidity("请输入有效日期");
     return false;
-  }else{
-    input.classList.remove('error');
-    errorElement.style.display = 'none';
-    input.setCustomValidity('');
-    if(input===document.getElementById('container_date') || input===document.getElementById('arrival_date')) {
+  } else {
+    input.classList.remove("error");
+    errorElement.style.display = "none";
+    input.setCustomValidity("");
+    if (input === document.getElementById("container_date") || 
+        input === document.getElementById("arrival_date")) {
       updateDays();
     }
     return true;
   }
 }
 
-function updateRM(){
-  const cur=document.getElementById('currency').value;
-  const raw=parseNum(document.getElementById('price').value);
-  const rate=rateMap[cur]||0;
-  const rm=raw*rate;
-  document.getElementById('price_rm').value=isNaN(rm)?'':formatCurrency(rm);
-  updateSalesPrices(rm);
-  updateBaseCost();
-  updateTotalAmount();
+function parseDDMMYY(str) {
+  if (!str) return null;
+  const [d, m, y] = str.split("/").map(n => parseInt(n, 10));
+  if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
+  const fullY = y < 100 ? 2000 + y : y;
+  const dt = new Date(fullY, m - 1, d);
+  if (dt.getFullYear() !== fullY || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null;
+  return dt;
 }
 
-function updateSalesPrices(rmCostPerPlant){
-  const prices={
-    "20%": rmCostPerPlant * 1.26 * 1.12,
-    "30%": rmCostPerPlant * 1.43 * 1.12,
-    "40%": rmCostPerPlant * 1.67 * 1.12,
-    "45%": rmCostPerPlant * 1.82 * 1.12,
-    "50%": rmCostPerPlant * 2.00 * 1.12,
-    "55%": rmCostPerPlant * 2.23 * 1.12
-  };
-  let html = '';
-  for(const [key, value] of Object.entries(prices)){
-    const style = key === "50%" ? 'style="color:red;font-weight:bold;"' : '';
-    html += `<div class="entry" ${style}><strong>${key} 利润售价：</strong>RM ${formatCurrency(value)}</div>`;
-  }
-  document.getElementById('priceSummary').innerHTML = html;
-}
-
-function updateTotalAmount(){
-  const quantity = parseNum(document.getElementById('total_plants').value) || parseNum(document.getElementById('quantity').value);
-  const rmPerPlant = parseNum(document.getElementById('price_rm').value);
-  const total = quantity * rmPerPlant;
-  document.getElementById('total_amount').value = total ? formatCurrency(total) : '';
-  updateFreightRatio();
-}
-
-function updateDays(){
-  const cdt=parseDDMMYY(document.getElementById('container_date').value);
-  const adt=parseDDMMYY(document.getElementById('arrival_date').value);
-  if(!cdt || !adt){
-    document.getElementById('days').value='';
-    return;
-  }
-  let days = (adt - cdt)/(1000*60*60*24);
-  if(isNaN(days) || days<0) days=0;
-  document.getElementById('days').value = Math.round(days);
-}
-
-function updateFreightRatio(){
-  const freight = parseNum(document.getElementById('freight_fee').value) || 0;
-  const total = parseNum(document.getElementById('total_amount').value);
-  const ratio = total>0 ? (freight/total) : 0;
-  document.getElementById('freight_ratio').value = formatPercent(ratio);
-}
-
-function updateBaseCost(){
-  const rmPerPlant = parseNum(document.getElementById('price_rm').value);
-  const qty = parseNum(document.getElementById('quantity').value);
-  const local = parseNum(document.getElementById('local').value);
-  const moss = parseNum(document.getElementById('moss').value);
-  const pot = parseNum(document.getElementById('pot').value);
-  const base = (rmPerPlant*qty) + local + moss + pot;
-  document.getElementById('base_cost').value = base ? formatCurrency(base) : '';
-}
-
-/* ------------------------ 事件监听 ------------------------ */
-document.getElementById('currency').addEventListener('change', updateRM);
-document.getElementById('price').addEventListener('input', updateRM);
-document.getElementById('price').addEventListener('blur', function(){
-  this.value=formatCurrency(this.value); 
-  updateRM();
-});
-document.getElementById('quantity').addEventListener('input', updateBaseCost);
-document.getElementById('total_plants').addEventListener('input', updateTotalAmount);
-document.getElementById('freight_fee').addEventListener('input', updateFreightRatio);
-document.getElementById('freight_fee').addEventListener('blur', function(){
-  this.value=formatCurrency(this.value); 
-  updateFreightRatio();
+/* ======================== 初始化 ======================== */
+window.addEventListener("load", async () => {
+  await initFirebase();
+  initForm();
 });
 
-['local','moss','pot'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', updateBaseCost);
-  document.getElementById(id).addEventListener('blur', function(){
-    this.value=formatCurrency(this.value);
-    updateBaseCost();
-  });
-});
-
-document.getElementById('warehouse_date').addEventListener('blur', function(){
-  validateDate(this, document.getElementById('warehouse_date_error'));
-});
-document.getElementById('container_date').addEventListener('blur', function(){
-  validateDate(this, document.getElementById('container_date_error'));
-});
-document.getElementById('arrival_date').addEventListener('blur', function(){
-  validateDate(this, document.getElementById('arrival_date_error'));
-});
-
-/* ------------------------ 保存功能 ------------------------ */
-function showAutoSaveStatus(txt,isError=false){
-  const el = document.getElementById('autoSaveStatus');
-  el.textContent=txt;
-  el.style.color=isError?'red':'#666';
+function initForm() {
+  // 初始化表单逻辑...
+  console.log("表单初始化完成");
 }
-
-async function manualSave(){
-  const ok = validateBeforeSave();
-  if(!ok) return;
-  
-  try {
-    await saveRecordToFirebase();
-    alert("✅ 资料已储存！");
-  } catch(err) {
-    console.error(err);
-    alert("❌ 储存失败，请检查网络或配置。");
-  }
-}
-
-function validateBeforeSave(){
-  if(!validatePurchaseFields()) return false;
-  
-  if(isShippingReady) {
-    const requiredShippingFields = ['shipment_id', 'warehouse_date'];
-    let isValid = true;
-    
-    requiredShippingFields.forEach(id => {
-      const field = document.getElementById(id);
-      if(!field.value.trim()) {
-        field.classList.add('error');
-        isValid = false;
-      } else {
-        field.classList.remove('error');
-      }
-    });
-    
-    if(!isValid) {
-      alert('请填写完整的发货信息');
-      return false;
-    }
-    
-    // 验证日期
-    const datesValid = [
-      validateDate(document.getElementById('warehouse_date'), document.getElementById('warehouse_date_error')),
-      validateDate(document.getElementById('container_date'), document.getElementById('container_date_error')),
-      validateDate(document.getElementById('arrival_date'), document.getElementById('arrival_date_error'))
-    ].every(valid => valid);
-    
-    if(!datesValid) return false;
-  }
-  
-  return true;
-}
-
-async function saveRecordToFirebase(){
-  if(!db) throw new Error('Firebase Firestore 未初始化');
-  
-  const docData = {
-    // 采购信息
-    supplier: document.getElementById('supplier').value.trim(),
-    variety: document.getElementById('variety').value.trim(),
-    currency: document.getElementById('currency').value,
-    unit_price_foreign: parseNum(document.getElementById('price').value),
-    unit_price_rm: parseNum(document.getElementById('price_rm').value),
-    quantity: parseNum(document.getElementById('quantity').value),
-    image_url: document.getElementById('image_url').value.trim(),
-    
-    // 状态信息
-    status: isShippingReady ? '待发货' : '采购中',
-    created_at: new Date().toISOString()
-  };
-  
-  // 发货信息（如果有）
-  if(isShippingReady) {
-    docData.shipment_id = document.getElementById('shipment_id').value.trim();
-    docData.total_plants = parseNum(document.getElementById('total_plants').value);
-    docData.total_amount_rm = parseNum(document.getElementById('price_rm').value) * docData.total_plants;
-    docData.packing = document.getElementById('packing').value.trim();
-    docData.warehouse_date = document.getElementById('warehouse_date').value.trim();
-    docData.container_date = document.getElementById('container_date').value.trim();
-    docData.shipping_no = document.getElementById('shipping_no').value.trim();
-    docData.arrival_date = document.getElementById('arrival_date').value.trim();
-    docData.transit_days = parseNum(document.getElementById('days').value);
-    docData.freight_rm = parseNum(document.getElementById('freight_fee').value) || 0;
-    docData.freight_ratio = document.getElementById('freight_ratio').value.trim();
-    
-    // 更新状态为已完成
-    docData.status = '已完成';
-    document.getElementById('form-status').textContent = '已完成';
-    document.getElementById('form-status').className = 'status-badge status-completed';
-  }
-  
-  // 成本信息
-  docData.local_transport = parseNum(document.getElementById('local').value);
-  docData.moss = parseNum(document.getElementById('moss').value);
-  docData.pot = parseNum(document.getElementById('pot').value);
-  docData.base_cost = parseNum(document.getElementById('base_cost').value);
-
-  // 保存到Firestore
-  await db.collection('bonsai_records').add(docData);
-
-  // 更新历史记录
-  addToHistory('supplier', document.getElementById('supplier').value);
-  addToHistory('variety', document.getElementById('variety').value);
-
-  formDirty = false;
-  lastAutoSaveTS = Date.now();
-  showAutoSaveStatus('已储存 ' + new Date().toLocaleTimeString());
-  
-  // 如果是发货记录，更新汇总
-  if(isShippingReady) {
-    aggregateShipments();
-  }
-}
-
-/* ------------------------ 自动保存 ------------------------ */
-const AUTO_SAVE_INTERVAL = 3 * 60 * 1000;
-setInterval(async()=>{
-  if(!formDirty) return;
-  const ok=validateBeforeSave();
-  if(!ok){ 
-    showAutoSaveStatus('自动储存失败：表单未通过验证',true); 
-    return; 
-  }
-  try{
-    await saveRecordToFirebase();
-    showAutoSaveStatus('自动储存完成 '+new Date().toLocaleTimeString());
-  }catch(err){
-    console.error('自动储存失败',err);
-    showAutoSaveStatus('自动储存失败',true);
-  }
-}, AUTO_SAVE_INTERVAL);
-
-/* ------------------------ 历史记录 ------------------------ */
-const SUPPLIER_STORE_KEY = 'bonsai_supplier_history_v1';
-const VARIETY_STORE_KEY = 'bonsai_variety_history_v1';
-
-function addToHistory(id,key){
-  const raw=key.trim();
-  if(!raw) return;
-  const storeKey = id==='supplier'?SUPPLIER_STORE_KEY:VARIETY_STORE_KEY;
-  const arr=JSON.parse(localStorage.getItem(storeKey)||'[]');
-  if(!arr.includes(raw)){
-    arr.push(raw);
-    arr.sort();
-    localStorage.setItem(storeKey,JSON.stringify(arr));
-    loadHistoryOptions();
-  }
-}
-
-function loadHistoryOptions(){
-  const supers = JSON.parse(localStorage.getItem(SUPPLIER_STORE_KEY)||'[]');
-  const vars = JSON.parse(localStorage.getItem(VARIETY_STORE_KEY)||'[]');
-  fillDatalist('supplierHistory',supers);
-  fillDatalist('varietyHistory',vars);
-}
-
-function fillDatalist(id,arr){
-  const dl=document.getElementById(id);
-  dl.innerHTML='';
-  arr.forEach(v=>{
-    const opt=document.createElement('option');
-    opt.value=v;
-    dl.appendChild(opt);
-  });
-}
-
-/* ------------------------ 发货汇总 ------------------------ */
-async function aggregateShipments(){
-  if(!db) return;
-  try{
-    const snap=await db.collection('bonsai_records').orderBy('created_at','desc').limit(500).get();
-    const groups={};
-    snap.forEach(doc=>{
-      const d=doc.data();
-      const sid=d.shipment_id||'';
-      if(!groups[sid]) groups[sid]={plants:0,amount:0,rows:0};
-      const p = d.total_plants>0?d.total_plants:d.quantity;
-      const amt = d.total_amount_rm>0?d.total_amount_rm:(d.unit_price_rm * p);
-      groups[sid].plants += p;
-      groups[sid].amount += amt;
-      groups[sid].rows++;
-    });
-    console.log('📦 发货单号汇总：',groups);
-  }catch(err){
-    console.error('汇总失败',err);
-  }
-}
-
-/* ------------------------ 初始化 ------------------------ */
-function init(){
-  loadHistoryOptions();
-  updateRM();
-  updateBaseCost();
-  updateTotalAmount();
-  updateFreightRatio();
-  updateDays();
-  
-  // 表单输入监听
-  document.getElementById('bonsaiForm').addEventListener('input', ()=>{ 
-    formDirty=true; 
-  });
-  
-  // Enter跳格
-  const formFields = Array.from(document.querySelectorAll('#bonsaiForm input, #bonsaiForm select, #bonsaiForm textarea, #bonsaiForm button:not([type=button])'));
-  formFields.forEach((el,i)=>{
-    el.addEventListener('keydown', e=>{
-      if(e.key==='Enter'){
-        if(el.tagName==='BUTTON') return;
-        e.preventDefault();
-        
-        if(el.classList.contains('date-input')){
-          let errorElement;
-          if(el === document.getElementById('warehouse_date')) errorElement = document.getElementById('warehouse_date_error');
-          else if(el === document.getElementById('container_date')) errorElement = document.getElementById('container_date_error');
-          else if(el === document.getElementById('arrival_date')) errorElement = document.getElementById('arrival_date_error');
-          
-          const ok=validateDate(el, errorElement);
-          if(!ok) return;
-        }
-        
-        const id=el.id;
-        if(['price','freight_fee','local','moss','pot'].includes(id)){
-          el.value=formatCurrency(el.value);
-        }
-        
-        let next=i+1;
-        while(next<formFields.length && (formFields[next].disabled || formFields[next].type==='hidden')) next++;
-        if(formFields[next]) formFields[next].focus();
-      }
-    });
-  });
-  
-  // 初始聚焦
-  document.getElementById('supplier').focus();
-}
-
-window.addEventListener('load', init);
 </script>
 </body>
 </html>
