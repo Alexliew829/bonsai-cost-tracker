@@ -133,10 +133,12 @@
       <input id="price_rm" disabled placeholder="0.00" />
     </div>
     <input id="quantity" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0" />
-
-    <label for="image_url">图片网址</label><label for="shipment_id">发货单号</label>
+  <label for="image_url">图片网址</label><label for="shipment_id">发货单号</label>
     <input id="image_url" type="url" class="url-link" placeholder="https://..." onclick="openImageUrl(this)" />
-    <input id="shipment_id" placeholder="例如 2025CNY01" />
+   <div style="display: flex; gap: 6px; align-items: center;">
+  <input id="shipment_id" placeholder="例如 2025CNY01" />
+  <button type="button" onclick="showShipmentDetails()" title="查看此发货单的记录">📋</button>
+</div>
 
     <!-- 🚛 发货资料 -->
     <h2 class="full">🚛 发货资料</h2>
@@ -528,6 +530,45 @@ async function saveRecordToFirebase(){
     shipping_no: elShippingNo.value.trim(),
     created_at: new Date().toISOString()
   };
+
+  async function showShipmentDetails() {
+  const sid = document.getElementById('shipment_id').value.trim();
+  if (!sid) {
+    alert('请先输入发货单号');
+    return;
+  }
+  if (!db) {
+    alert('Firebase 尚未初始化');
+    return;
+  }
+  try {
+    const snap = await db.collection('bonsai_records')
+      .where('shipment_id', '==', sid)
+      .orderBy('created_at', 'desc')
+      .get();
+
+    if (snap.empty) {
+      alert('找不到发货单号：' + sid);
+      return;
+    }
+
+    let message = `📦 发货单号：${sid}\\n\\n`;
+    let index = 1;
+    snap.forEach(doc => {
+      const d = doc.data();
+      const variety = d.variety || '（无品种）';
+      const qty = d.quantity || 0;
+      const rm = d.unit_price_rm || 0;
+      message += `${index++}. 品种：${variety}，数量：${qty}，RM：${rm.toLocaleString('en-MY', {minimumFractionDigits: 2})}\\n`;
+    });
+
+    alert(message);
+  } catch (err) {
+    console.error('读取发货资料失败', err);
+    alert('读取发货资料失败，请检查网络或稍后重试');
+  }
+}
+
 
   // 使用自动 doc（你未要求指定 doc id）
   await db.collection('bonsai_records').add(docData);
